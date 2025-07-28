@@ -524,11 +524,8 @@ class MainWindow(qtw.QWidget):
             self.currentV = self.listV[self.index]
             # read out the current with the corresponding voltage
             self.currentI = self.read_current_out(self.currentV)
-            # self.x_vals.insert(self.index, self.currentV)
             self.x_vals.append(self.currentV)
-            # self.y_vals.insert(self.index, self.currentI)
             self.y_vals.append(self.currentI)
-            # self.logy_curr_data.insert(self.index, abs(self.currentI))
             self.logy_curr_data.append(abs(self.currentI))
             # plot logarithmic scale
             self.index += 1
@@ -563,11 +560,7 @@ class MainWindow(qtw.QWidget):
             self.currState = self.state['save_data']
             self.state_machine_function()
         elif self.index > self.numberStep:
-            # finish measurement
-            # print('finish measurement')
             self.message('finish measurement')
-            # print(self.index)
-            # print(self.numberStep)
             self.index = 0
             self.started = False
             self.currState = self.state['stop']
@@ -580,20 +573,14 @@ class MainWindow(qtw.QWidget):
     def rt_get_plot(self):
         self.message('rt get and plot')
         if self.started:
-            # print('jump into rt_get_plot')
-            # self.Keithley.write(":READ?")
-            # dut_current = float(self.Keithley.read())
             dut_current = self.SMU.readout()
-            # print(dut_current)
             if self.index == 0:
                 self.start_time = time.time()
             self.current_time = time.time()
             time_lapsed = self.current_time - self.start_time
-            # print(time_lapsed)
             # append the acquired data to the list containing data
             self.y_vals.append(dut_current)
             self.logy_curr_data.append(abs(dut_current))
-            # self.rt_data_time.insert(self.index, time_lapsed)
             self.x_vals.append(time_lapsed)
             self.index += 1
             # plot the data in real-time
@@ -603,7 +590,6 @@ class MainWindow(qtw.QWidget):
             plt.yscale(self.yscale)
             plt.autoscale(enable=True, axis='y')
             # ticklabel format
-            # plt.grid(color = 'green', linestyle = '--', linewidth = 0.5)
             ax.grid(which='major', color='grey', linewidth=1)
             ax.grid(which='minor', color='darkgrey', linestyle=':', linewidth=0.8)
             ax.minorticks_on()
@@ -636,15 +622,13 @@ class MainWindow(qtw.QWidget):
     # function to readout current I as applying voltage V
     def read_current_out(self, voltage):
 
-        # self.Keithley.write(f':SOUR:VOLT:LEV {voltage}')
         self.SMU.set_voltage_level(voltage)
         # delay 150 ms before reading the current
         # this delay time has to be higher than Source-Delay-Measurement time
         # sleep time = Source-Delay + Measure + 10 ms
         time.sleep(
             (round(self.nplc_value.currentData() * 16.67) + float(self.source_delay_time_value.text()) + 10) / 1000)
-        # self.Keithley.write(":READ?")
-        # return float(self.Keithley.read())
+
         return self.SMU.readout()
 
     def exit_clicked(self):
@@ -680,13 +664,10 @@ class MainWindow(qtw.QWidget):
             self.state_machine_function()
         else:
             # reset the device
-            # self.Keithley.write('*RST')
             self.SMU.reset_smu()
             # timeout in second
-            # self.Keithley.timeout = 25000
             self.SMU.timeout_smu(25000)
             # set the corresponding terminal
-            # self.Keithley.write(f':ROUT:TERM {self.terminal_value.currentData()}')
             if self.terminal_value.currentData() == 'FRON':
                 self.SMU.set_front_terminal()
             elif self.terminal_value.currentData() == 'REAR':
@@ -726,46 +707,30 @@ class MainWindow(qtw.QWidget):
         for i in range(self.numberStep + 1):
             value = self.startV + i * self.stepV
             self.listV.insert(i, value)
-        # print(self.listV)
         # select source function VOLtage
-        # self.Keithley.write(':SOUR:FUNC VOLT')
         self.SMU.set_source_function_voltage()
         # select fixed sourcing mode for V-source, this function is only for SMU2400
-        # self.Keithley.write(":SOUR:VOLT:MODE FIXED")
-        # self.Keithley.write(":SOUR:DEL:AUTO OFF")
         self.SMU.set_source_voltage_delay_auto_off()
         # source delay measurement (DSM) is 50 ms
-        # source_delay = float(self.source_delay_time_value.text()) / 1000
-        # self.Keithley.write(f":SOUR:VOLT:DEL {source_delay}")
         self.SMU.set_source_voltage_delay_time(float(self.source_delay_time_value.text()))
         # check one more time the float forcing type
         if self.voltage_range_combo.currentText() == 'Auto':
-            # self.Keithley.write(":SOUR:VOLT:RANG:AUTO 1")
             self.SMU.set_voltage_range_auto_on()
         else:
             # select V-source range
-            # self.Keithley.write(f":SOUR:VOLT:RANG {self.voltage_range_combo.currentData()}")
             self.SMU.set_voltage_range_value(self.voltage_range_combo.currentData())
         # select V source amplitude
-        # self.Keithley.write(":SOUR:VOLT:LEV 0.0")
         self.SMU.set_voltage_level(0.0)
         # select measure function
-        # self.Keithley.write(":SENS:FUNC 'CURR'")
         self.SMU.set_measure_mode_current()
         # current range = current compliance
-        # self.Keithley.write(f":SENS:CURR:RANG {self.current_range_combo.currentData()}")
         self.SMU.set_measure_current_range(self.current_range_combo.currentData())
         # current compliance SOUR:VOLT:ILIM 1
-        # self.Keithley.write(f":SENS:CURR:PROT {self.current_range_combo.currentData()}")
-        # self.Keithley.write(f":SOUR:VOLT:ILIM {self.current_range_combo.currentData()}")
         self.SMU.set_measure_current_limit(self.current_range_combo.currentData())
         # nplc setting
-        # self.Keithley.write(f"SENS:CURR:NPLC {self.nplc_value.currentData()}")
         self.SMU.set_measure_current_nplc(self.nplc_value.currentData())
         # current reading only, only for SMU2400
-        # self.Keithley.write(":FORM:ELEM CURR")
         # keithley on
-        # self.Keithley.write('OUTP ON')
         self.SMU.set_output_on()
 
         # go to startV in 10 steps
@@ -803,9 +768,7 @@ class MainWindow(qtw.QWidget):
         # self.Keithley.write(':SOUR:FUNC VOLT')
         self.SMU.set_source_function_voltage()
         # select fixed soucrcing mode for V-source, this function is only for SMU2400
-        # self.Keithley.write(":SOUR:VOLT:MODE FIXED")
         # source delay measurement (DSM) is automatic in the real-time case
-        # self.Keithley.write(":SOUR:VOLT:DEL:AUTO ON")
         self.SMU.set_source_voltage_delay_auto_on()
 
         if self.rt_voltage_range_combo.currentText() == 'Auto':
@@ -813,34 +776,23 @@ class MainWindow(qtw.QWidget):
             self.SMU.set_voltage_range_auto_on()
         else:
             # select V-source range
-            # self.Keithley.write(f":SOUR:VOLT:RANG {self.rt_voltage_range_combo.currentData()}")
             self.SMU.set_voltage_range_value(self.rt_voltage_range_combo.currentData())
         # select V source amplitude
-        # self.Keithley.write(f":SOUR:VOLT:LEV {self.rt_voltage_set_value.text()}")
         self.SMU.set_voltage_level(self.rt_voltage_set_value.text())
         # select measure function
-        # self.Keithley.write(":SENS:FUNC 'CURR'")
         self.SMU.set_measure_mode_current()
-        # current compliance SOUR:VOLT:ILIM 1
-        # self.Keithley.write(f":SENS:CURR:PROT {self.rt_current_range_combo.currentData()}")
-        # self.Keithley.write(f":SOUR:VOLT:ILIM {self.rt_current_range_combo.currentData()}")
         self.SMU.set_measure_current_limit(self.rt_current_range_combo.currentData())
         # current range = current compliance
-        # self.Keithley.write(f":SENS:CURR:RANG {self.rt_current_range_combo.currentData()}")
         self.SMU.set_measure_current_range(self.rt_current_range_combo.currentData())
         # nplc setting
-        # self.Keithley.write(f"SENS:CURR:NPLC {self.nplc_value.currentData()}")
         self.SMU.set_measure_current_nplc(self.nplc_value.currentData())
         # current reading only, this function is only for SMU2400
-        # self.Keithley.write(":FORM:ELEM CURR")
         # keithley on
-        # self.Keithley.write('OUTP ON')
         self.SMU.set_output_on()
         # to to the rt_voltage_set_value in 10 steps
         if self.repeat == 0:
             self.goto_voltage(float(self.rt_voltage_set_value.text()), 10)
         else:
-            # self.Keithley.write(f":SOUR:VOLT:LEV {self.rt_voltage_set_value.text()}")
             self.SMU.set_voltage_level(self.rt_voltage_set_value.text())
             time.sleep(0.05)
 
@@ -848,7 +800,6 @@ class MainWindow(qtw.QWidget):
         currentTime = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
         file_name = 'RT' + self.file_name_text.text() + currentTime + '.txt'
         self.filepath = os.path.join(self.folder_location_text.text(), file_name)
-        # self.communication_text.setText(self.filepath)
 
         try:
             self.f = open(self.filepath, "w")
@@ -875,12 +826,9 @@ class MainWindow(qtw.QWidget):
         delta_voltage = set_voltage / num_step
         for i in range(num_step + 1):
             output_voltage = i * delta_voltage
-            # self.Keithley.write(f':SOUR:VOLT:LEV {output_voltage}')
             self.SMU.set_voltage_level(output_voltage)
             # sleep time = delay some ms for the voltage to jump to the value
             time.sleep(0.01)
-            # self.Keithley.write(":READ?")
-            # float(self.Keithley.read())
             self.SMU.readout()
 
     def stoper(self):
@@ -893,11 +841,8 @@ class MainWindow(qtw.QWidget):
         if not self.f.closed:
             self.f.close()
 
-        # self.Keithley.write('*RST')
         self.SMU.reset_smu()
-        # self.Keithley.write('OUTP OFF')
         self.SMU.set_output_off()
-        # self.Keithley.close()
         self.SMU.close_smu()
         self.started = False
         # increase the repeat time to +1
@@ -925,8 +870,7 @@ class MainWindow(qtw.QWidget):
         self.message('exit')
         # make sure click stop if started before clicking exit
         self.currState = self.state['exit']
-        # if self.Keithley:
-        #     self.Keithley.close()
+
         if self.SMU:
             self.SMU.close_smu()
         self.close()
@@ -950,7 +894,6 @@ class MainWindow(qtw.QWidget):
             self.state_machine_function()
         elif self.meas_mode == 'RT' and self.save_data:
             # save data in rt mode
-            # save_data = str(self.rt_data_time[-1]) + '\t' + str(self.rt_data_current[-1]) + '\n'
             save_data = str(self.x_vals[-1]) + '\t' + str(self.y_vals[-1]) + '\n'
             self.f.write(save_data)
             # after saving jump to wait_for_event
