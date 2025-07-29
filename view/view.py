@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 import pyvisa
 import os
 
-class MainView(qtw.QWidget):
+class View(qtw.QWidget):
+    closeSignal = qtc.pyqtSignal()
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Source Measurement Units realtimeIV')
@@ -204,7 +205,7 @@ class MainView(qtw.QWidget):
 
         # File location Label
         folder_location_label = qtw.QLabel('File Location')
-        search_folder_button = qtw.QPushButton('Folder')
+        self.search_folder_button = qtw.QPushButton('Folder')
         self.folder_location_text = qtw.QLineEdit(os.getcwd())
         
         # File name
@@ -219,7 +220,7 @@ class MainView(qtw.QWidget):
 
         self.fileDialog_layout.addWidget(folder_location_label, 1, 1)
         self.fileDialog_layout.addWidget(self.folder_location_text, 2, 2, 1, 3)
-        self.fileDialog_layout.addWidget(search_folder_button, 2, 1)
+        self.fileDialog_layout.addWidget(self.search_folder_button, 2, 1)
         self.fileDialog_layout.addWidget(file_name_label, 3, 1)
         self.fileDialog_layout.addWidget(self.file_name_text, 3, 3)
         self.fileDialog_layout.addWidget(graph_yscale, 4, 1)
@@ -237,6 +238,79 @@ class MainView(qtw.QWidget):
         self.communication_layout.addWidget(self.communication_text)
 
         self.left_layout.addWidget(self.communication_box)
+    
+    def load_settings(self, setting_window: qtc.QSettings, setting_variable: qtc.QSettings):
+        # load settings from setting_window and setting_variable
+
+        try:
+            self.resize(setting_window.value('window_size'))
+            self.move(setting_window.value('window_position'))
+            # user interface parameters
+            self.visa_name.setCurrentText(setting_variable.value('visa_name'))
+            self.terminal_value.setCurrentText(setting_variable.value('terminal'))
+            self.nplc_value.setCurrentText(setting_variable.value('nplc'))
+            self.measure_mode_combo.setCurrentText(setting_variable.value('mea_mode'))
+            self.tabs_IV_RT.setCurrentIndex(self.measure_mode_combo.currentData())
+
+            # # IV Parameters
+            self.source_delay_time_value.setText(setting_variable.value('sour_delay_time'))
+            self.voltage_range_combo.setCurrentText(setting_variable.value('v_range'))
+            self.from_voltage_value.setText(setting_variable.value('from_v'))
+            self.to_voltage_value.setText(setting_variable.value('to_v'))
+            self.step_voltage_value.setText(setting_variable.value('step_v'))
+            self.current_range_combo.setCurrentText(setting_variable.value('i_range'))
+
+            # RT parameters
+            self.rt_voltage_range_combo.setCurrentText(setting_variable.value('rt_v_range'))
+            self.rt_voltage_set_value.setText(setting_variable.value('rt_v_set'))
+            self.rt_current_range_combo.setCurrentText(setting_variable.value('rt_i_range'))
+            self.rt_aperture_value.setText(setting_variable.value('aperture'))
+
+            # # file and Plot Dialog
+            self.folder_location_text.setText(setting_variable.value('save_folder'))
+            self.file_name_text.setText(setting_variable.value('file_name'))
+            self.log_linear_combo.setCurrentText(setting_variable.value('y_scale'))
+
+            # set current parameter correspondingly
+            self.yscale = self.log_linear_combo.currentText()
+            self.meas_mode = self.measure_mode_combo.currentText()
+
+        except Exception as e:
+            print(f"View Error loading settings: {e}")
+
+    def save_settings(self, setting_window: qtc.QSettings, setting_variable: qtc.QSettings):
+        setting_window.setValue('window_size', self.size())
+        setting_window.setValue('window_position', self.pos())
+
+        # user interface parameters
+        setting_variable.setValue('visa_name', self.visa_name.currentText())
+        setting_variable.setValue('terminal', self.terminal_value.currentText())
+        setting_variable.setValue('nplc', self.nplc_value.currentText())
+        setting_variable.setValue('mea_mode', self.measure_mode_combo.currentText())
+        #
+        # # IV Parameters
+        setting_variable.setValue('sour_delay_time', self.source_delay_time_value.text())
+        setting_variable.setValue('v_range', self.voltage_range_combo.currentText())
+        setting_variable.setValue('from_v', self.from_voltage_value.text())
+        setting_variable.setValue('to_v', self.to_voltage_value.text())
+        setting_variable.setValue('step_v', self.step_voltage_value.text())
+        setting_variable.setValue('i_range', self.current_range_combo.currentText())
+
+        # # RT parameters
+        setting_variable.setValue('rt_v_range', self.rt_voltage_range_combo.currentText())
+        setting_variable.setValue('rt_v_set', self.rt_voltage_set_value.text())
+        setting_variable.setValue('rt_i_range', self.rt_current_range_combo.currentText())
+        setting_variable.setValue('aperture', self.rt_aperture_value.text())
+        #
+        # # file and Plot Dialog
+        setting_variable.setValue('save_folder', self.folder_location_text.text())
+        setting_variable.setValue('file_name', self.file_name_text.text())
+        setting_variable.setValue('y_scale', self.log_linear_combo.currentText())
+
+    def closeEvent(self, event):
+        print("Close event triggered")
+        self.closeSignal.emit()
+        event.accept()
     
     
 
