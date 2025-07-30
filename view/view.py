@@ -307,6 +307,9 @@ class View(qtw.QWidget):
         setting_variable.setValue('file_name', self.file_name_text.text())
         setting_variable.setValue('y_scale', self.log_linear_combo.currentText())
 
+    def message(self, msg):
+        self.communication_text.append(msg)
+        
     def closeEvent(self, event):
         print("Close event triggered")
         self.closeSignal.emit()
