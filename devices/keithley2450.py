@@ -79,6 +79,7 @@ class keithley_2450:
         self.Keithley.write(f":SOUR:VOLT:RANG {voltage_range}")
 
     '''tested'''
+    # voltage_level: float?
     def set_voltage_level(self, voltage_level):
         self.Keithley.write(f":SOUR:VOLT:LEV {voltage_level}")
     '''tested'''
@@ -90,6 +91,7 @@ class keithley_2450:
     def set_measure_current_range(self, current_range):
         self.Keithley.write(f":SENS:CURR:RANG {current_range}")
     '''tested'''
+    # current_limit: float?
     def set_measure_current_limit(self, current_limit):
         self.Keithley.write(f":SOUR:VOLT:ILIM {current_limit}")
     '''tested'''

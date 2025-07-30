@@ -84,7 +84,8 @@ class SMUBase(ABC):
     @abstractmethod
     def set_measure_current_range(self, current_range):
         pass
-
+    
+    # current_limit: float?
     @abstractmethod
     def set_measure_current_limit(self, current_limit):
         pass
