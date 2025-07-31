@@ -5,7 +5,7 @@
 
 - [x] implement log scale displaying
 - [x] move all feature from view to Configuration Dialog
-- [] remove settings in View
+- [x] remove settings in View
 - [] reorganize View
 - [] save configuration when exit and load when program start
 - [] save parameter of View is probably no longer needed

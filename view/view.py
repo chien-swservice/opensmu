@@ -15,24 +15,24 @@ class View(qtw.QWidget):
         self.resize(2400, 1800)
 
         # main layout = left and right layout
-        self.layout = qtw.QHBoxLayout(self)
+        _layout = qtw.QHBoxLayout(self)
         self.left_layout = qtw.QVBoxLayout()
         self.right_layout = qtw.QVBoxLayout()
 
-        self.layout.addLayout(self.left_layout)
-        self.layout.addLayout(self.right_layout)
+        _layout.addLayout(self.left_layout)
+        _layout.addLayout(self.right_layout)
 
         # left layout = file dialog and communication box
         spacer01 = qtw.QSpacerItem(20, 100, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Minimum)
         # create configuration dialog
         self.left_layout.addItem(spacer01)
-        self.button_layout = qtw.QVBoxLayout()
+        _button_layout = qtw.QVBoxLayout()
         self.configure_button = qtw.QPushButton('Configuration')
         self.configure_button.setFixedSize(200, 40)     
-        self.button_layout.addWidget(self.configure_button, alignment=Qt.AlignCenter)    
+        _button_layout.addWidget(self.configure_button, alignment=Qt.AlignCenter)    
         self.clear_graph_button = qtw.QPushButton('Clear Graph')
         self.clear_graph_button.setFixedSize(200, 40)
-        self.button_layout.addWidget(self.clear_graph_button, alignment=Qt.AlignCenter)
+        _button_layout.addWidget(self.clear_graph_button, alignment=Qt.AlignCenter)
 
         self.start_button = qtw.QPushButton('start')
         self.stop_button = qtw.QPushButton('stop')
@@ -40,12 +40,12 @@ class View(qtw.QWidget):
         self.start_button.setFixedSize(200, 40)
         self.stop_button.setFixedSize(200, 40)
         self.exit_button.setFixedSize(200, 40)
-        self.button_layout.addWidget(self.start_button, alignment=Qt.AlignCenter)
-        self.button_layout.addWidget(self.stop_button, alignment=Qt.AlignCenter)
-        self.button_layout.addWidget(self.exit_button, alignment=Qt.AlignCenter)
-        self.button_layout.setSpacing(30)
+        _button_layout.addWidget(self.start_button, alignment=Qt.AlignCenter)
+        _button_layout.addWidget(self.stop_button, alignment=Qt.AlignCenter)
+        _button_layout.addWidget(self.exit_button, alignment=Qt.AlignCenter)
+        _button_layout.setSpacing(30)
 
-        self.left_layout.addLayout(self.button_layout)
+        self.left_layout.addLayout(_button_layout)
         
         spacer = qtw.QSpacerItem(20, 200, qtw.QSizePolicy.Minimum, qtw.QSizePolicy.Minimum)
         self.left_layout.addItem(spacer)
@@ -57,21 +57,21 @@ class View(qtw.QWidget):
         # right layout = graph and buttons
         self.figure = plt.figure(figsize=(120, 60))
         self.canvas = FigureCanvas(self.figure)
-        self.toolbar = NavigationToolbar(self.canvas, self)
+        _toolbar = NavigationToolbar(self.canvas, self)
         
-        self.right_layout.addWidget(self.toolbar)
+        self.right_layout.addWidget(_toolbar)
         self.right_layout.addWidget(self.canvas)
 
     def _build_communication_box(self):
-        self.communication_box = qtw.QGroupBox('Communication')
-        self.communication_box.setMinimumHeight(300)
-        self.communication_box.setMinimumWidth(400)
-        self.communication_layout = qtw.QVBoxLayout()
-        self.communication_box.setLayout(self.communication_layout)
+        _communication_box = qtw.QGroupBox('Communication')
+        _communication_box.setMinimumHeight(300)
+        _communication_box.setMinimumWidth(400)
+        _communication_layout = qtw.QVBoxLayout()
+        _communication_box.setLayout(_communication_layout)
         self.communication_text = qtw.QTextEdit()
-        self.communication_layout.addWidget(self.communication_text)
+        _communication_layout.addWidget(self.communication_text)
 
-        self.left_layout.addWidget(self.communication_box)
+        self.left_layout.addWidget(_communication_box)
     
     def load_settings(self, setting_window: qtc.QSettings, setting_variable: qtc.QSettings):
         # load settings from setting_window and setting_variable
