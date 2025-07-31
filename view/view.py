@@ -25,7 +25,6 @@ class View(qtw.QWidget):
         # create configuration dialog
         self.configure_button = qtw.QPushButton('Configuration')
         self.left_layout.addWidget(self.configure_button)    
-        self._build_smu_box()
         self._build_iv_rt_tab()
         self._build_file_dialog_box()
         self._build_communication_box()
@@ -52,59 +51,6 @@ class View(qtw.QWidget):
         btn_layout.addWidget(self.exit_button)
         self.right_layout.addLayout(btn_layout)
 
-    def _build_smu_box(self):
-        
-        # smu connect
-        self.visa_label = qtw.QLabel('Visa name')
-        self.visa_name = qtw.QComboBox()
-        # create instance for connecting to the device
-        self.rm = pyvisa.ResourceManager()
-        self.instruments_list = self.rm.list_resources()
-        for i in range(len(self.instruments_list)):
-            item = self.instruments_list.__getitem__(i)
-            if 'GPIB' in item:
-                self.visa_name.addItem(item, i)
-        # terminal
-        self.terminal_label = qtw.QLabel('terminal')
-        self.terminal_value = qtw.QComboBox()
-        self.terminal_value.addItem('front', 'FRON')
-        self.terminal_value.addItem('rear', 'REAR')
-
-        # NPLC settings
-        self.nplc_label = qtw.QLabel('nplc')
-        self.nplc_value = qtw.QComboBox()
-        self.nplc_value.addItem('Fast', 0.01)
-        self.nplc_value.addItem('Medium', 0.10)
-        self.nplc_value.addItem('Normal', 1.00)
-        self.nplc_value.addItem('High Accuracy', 10.00)
-        self.nplc_value.setCurrentText('Normal')
-        
-        # measurement mode
-        self.measure_mode_label = qtw.QLabel('Mea. Mode')
-        self.measure_mode_combo = qtw.QComboBox()
-        self.measure_mode_combo.addItem('IV', 0)
-        self.measure_mode_combo.addItem('RT', 1)
-        self.measure_mode_combo.setCurrentText('IV')
-
-        # smu box layout
-        self.smu_box = qtw.QGroupBox('SMU Control', alignment=qtc.Qt.AlignHCenter, flat=True)
-        self.smu_box.setStyleSheet('QGroupBox:title {'
-                                        'subcontrol-origin: margin;'
-                                        'subcontrol-position: top center;'
-                                        'padding-left: 10px;'
-                                        'padding-right: 10px;}')
-        self.smu_layout = qtw.QGridLayout()
-        self.smu_box.setLayout(self.smu_layout)
-        self.smu_layout.addWidget(self.visa_label, 1, 1)
-        self.smu_layout.addWidget(self.visa_name, 1, 2, 1, 3)
-        self.smu_layout.addWidget(self.terminal_label, 2, 1)
-        self.smu_layout.addWidget(self.terminal_value, 2, 3)
-        self.smu_layout.addWidget(self.nplc_label, 3, 1)
-        self.smu_layout.addWidget(self.nplc_value, 3, 3)
-        self.smu_layout.addWidget(self.measure_mode_label, 4, 1)
-        self.smu_layout.addWidget(self.measure_mode_combo, 4, 3)
-
-        self.left_layout.addWidget(self.smu_box)
 
     def _build_iv_rt_tab(self):
         # parameter for IV measurement
@@ -249,11 +195,11 @@ class View(qtw.QWidget):
             self.resize(setting_window.value('window_size'))
             self.move(setting_window.value('window_position'))
             # user interface parameters
-            self.visa_name.setCurrentText(setting_variable.value('visa_name'))
-            self.terminal_value.setCurrentText(setting_variable.value('terminal'))
-            self.nplc_value.setCurrentText(setting_variable.value('nplc'))
-            self.measure_mode_combo.setCurrentText(setting_variable.value('mea_mode'))
-            self.tabs_IV_RT.setCurrentIndex(self.measure_mode_combo.currentData())
+            # self.visa_name.setCurrentText(setting_variable.value('visa_name'))
+            # self.terminal_value.setCurrentText(setting_variable.value('terminal'))
+            # self.nplc_value.setCurrentText(setting_variable.value('nplc'))
+            # self.measure_mode_combo.setCurrentText(setting_variable.value('mea_mode'))
+            # self.tabs_IV_RT.setCurrentIndex(self.measure_mode_combo.currentData())
 
             # # IV Parameters
             self.source_delay_time_value.setText(setting_variable.value('sour_delay_time'))
@@ -286,10 +232,10 @@ class View(qtw.QWidget):
         setting_window.setValue('window_position', self.pos())
 
         # user interface parameters
-        setting_variable.setValue('visa_name', self.visa_name.currentText())
-        setting_variable.setValue('terminal', self.terminal_value.currentText())
-        setting_variable.setValue('nplc', self.nplc_value.currentText())
-        setting_variable.setValue('mea_mode', self.measure_mode_combo.currentText())
+        # setting_variable.setValue('visa_name', self.visa_name.currentText())
+        # setting_variable.setValue('terminal', self.terminal_value.currentText())
+        # setting_variable.setValue('nplc', self.nplc_value.currentText())
+        # setting_variable.setValue('mea_mode', self.measure_mode_combo.currentText())
         #
         # # IV Parameters
         setting_variable.setValue('sour_delay_time', self.source_delay_time_value.text())

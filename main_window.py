@@ -131,7 +131,7 @@ class MainWindow(qtw.QWidget):
         self.view.exit_button.clicked.connect(self.exit_clicked)
 
         # measurement mode change
-        self.view.measure_mode_combo.activated.connect(self.measure_mode_changed)
+        # self.view.measure_mode_combo.activated.connect(self.measure_mode_changed)
         # search folder button
         self.view.search_folder_button.clicked.connect(self.folder_clicked)
         # clear graph button
@@ -149,6 +149,8 @@ class MainWindow(qtw.QWidget):
             self.config['RT'].update(updated_config['RT'])
             self.config['global'].update(updated_config['global'])
             print("[MainWindow] Config updated:", self.config)
+            # clear measurement data after updating config
+            self.clear_data()
     
     # update data from View
     def update_config_from_view(self):
@@ -156,7 +158,7 @@ class MainWindow(qtw.QWidget):
         self.config['global']['visa_name'] = self.view.visa_name.currentText()
         self.config['global']['terminal'] = self.view.terminal_value.currentData()
         self.config['global']['nplc'] = float(self.view.nplc_value.currentData())
-        self.config['global']['meas_mode'] = self.view.measure_mode_combo.currentText()
+        # self.config['global']['meas_mode'] = self.view.measure_mode_combo.currentText()
 
         self.config['global']['save_folder'] = self.view.folder_location_text.text()
         self.config['global']['file_name'] = self.view.file_name_text.text()
@@ -310,7 +312,7 @@ class MainWindow(qtw.QWidget):
         self.view.start_button.setEnabled(True)
         self.view.stop_button.setEnabled(False)
         self.view.exit_button.setEnabled(True)
-        self.view.measure_mode_combo.setEnabled(True)
+        # self.view.measure_mode_combo.setEnabled(True)
         self.save_data = True
         # set the current state
         self.currState = self.state['wait_for_event']
@@ -340,13 +342,13 @@ class MainWindow(qtw.QWidget):
         self.state_machine_function()
     
     def measure_mode_changed(self):
-        self.config['global']['meas_mode'] = self.view.measure_mode_combo.currentText()
+        # self.config['global']['meas_mode'] = self.view.measure_mode_combo.currentText()
         # change the mode, the repeat value set back to 0
 
         self.clear_data()
 
         self.view.message(self.config['global']['meas_mode'])
-        self.view.tabs_IV_RT.setCurrentIndex(self.view.measure_mode_combo.currentData())
+        # self.view.tabs_IV_RT.setCurrentIndex(self.view.measure_mode_combo.currentData())
 
     def clear_data(self):
         self.repeat = 0
@@ -418,7 +420,7 @@ class MainWindow(qtw.QWidget):
                 self.view.start_button.setEnabled(False)
                 self.view.exit_button.setEnabled(False)
                 self.view.stop_button.setEnabled(True)
-                self.view.measure_mode_combo.setEnabled(False)
+                # self.view.measure_mode_combo.setEnabled(False)
     def iv_starter(self):
         print('went into iv_starter')
         self.view.message('iv_starter')
@@ -583,7 +585,7 @@ class MainWindow(qtw.QWidget):
         self.view.start_button.setEnabled(True)
         self.view.stop_button.setEnabled(False)
         self.view.exit_button.setEnabled(True)
-        self.view.measure_mode_combo.setEnabled(True)
+        # self.view.measure_mode_combo.setEnabled(True)
 
         # go back to wait_for_event
         self.currState = self.state['wait_for_event']
