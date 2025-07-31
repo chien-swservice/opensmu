@@ -133,7 +133,7 @@ class MainWindow(qtw.QWidget):
         # measurement mode change
         # self.view.measure_mode_combo.activated.connect(self.measure_mode_changed)
         # search folder button
-        self.view.search_folder_button.clicked.connect(self.folder_clicked)
+        # self.view.search_folder_button.clicked.connect(self.folder_clicked)
         # clear graph button
         self.view.clear_graph_button.clicked.connect(self.clear_graph_clicked)
 
@@ -328,13 +328,13 @@ class MainWindow(qtw.QWidget):
         self.view.message("Stop button clicked")
         self.state_machine_function()
 
-    def folder_clicked(self):
-        currentLocation = qtw.QFileDialog.getExistingDirectory(
-            self,
-            caption='select a folder',
-            directory=os.getcwd()
-        )
-        self.view.folder_location_text.setText(currentLocation)
+    # def folder_clicked(self):
+    #     currentLocation = qtw.QFileDialog.getExistingDirectory(
+    #         self,
+    #         caption='select a folder',
+    #         directory=os.getcwd()
+    #     )
+    #     self.view.folder_location_text.setText(currentLocation)
 
     def exit_clicked(self):
         # Exit button logic
