@@ -442,7 +442,7 @@ class MainWindow(qtw.QWidget):
         self.SMU.set_source_voltage_delay_time(self.config['IV']['source_delay_ms'])
         # check one more time the float forcing type
         # better to compare text than the currentData == 0
-        if self.view.voltage_range_combo.currentText() == 'Auto':
+        if self.config['IV']['voltage_range'] == 0:
             self.SMU.set_voltage_range_auto_on()
         else:
             # select V-source range
@@ -499,7 +499,7 @@ class MainWindow(qtw.QWidget):
         # source delay measurement (DSM) is automatic in the real-time case
         self.SMU.set_source_voltage_delay_auto_on()
 
-        if self.view.rt_voltage_range_combo.currentText() == 'Auto':
+        if self.config['RT']['rt_voltage_range'] == 'Auto':
             # self.Keithley.write(":SOUR:VOLT:RANG:AUTO 1")
             self.SMU.set_voltage_range_auto_on()
         else:
