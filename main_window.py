@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets as qtw
 from PyQt5 import QtCore as qtc
 from view.view import View
+from view.components.config_dialog import ConfigDialog
 from devices.smu_simulation import SMUSimulation 
 import pyvisa
 import time
@@ -25,7 +26,7 @@ class MainWindow(qtw.QWidget):
                 'rt_voltage_range': 2.0,
                 'rt_voltage_set': 0.5,
                 'rt_current_range': 1e-6,
-                'rt_aperture': 1.0,
+                'rt_aperture': 1.0
 
             },
             'global': {
@@ -124,6 +125,7 @@ class MainWindow(qtw.QWidget):
 
     def connect_signals(self):
         # Connect signals to slots here
+        self.view.configure_button.clicked.connect(self.open_config_dialog)
         self.view.start_button.clicked.connect(self.start_clicked)
         self.view.stop_button.clicked.connect(self.stop_clicked)
         self.view.exit_button.clicked.connect(self.exit_clicked)
@@ -137,7 +139,17 @@ class MainWindow(qtw.QWidget):
 
         # Connect close event
         self.view.closeSignal.connect(self.on_view_closed)
-
+    # open configuration dialog
+    def open_config_dialog(self):
+        # call ConfigDiaglog
+        dialog = ConfigDialog(self.config, parent=self)
+        if dialog.exec_():
+            updated_config = dialog.get_config()
+            self.config['IV'].update(updated_config['IV'])
+            self.config['RT'].update(updated_config['RT'])
+            self.config['global'].update(updated_config['global'])
+            print("[MainWindow] Config updated:", self.config)
+    
     # update data from View
     def update_config_from_view(self):
 
@@ -160,7 +172,7 @@ class MainWindow(qtw.QWidget):
         self.config['RT']['rt_voltage_range'] = float(self.view.rt_voltage_range_combo.currentData())
         self.config['RT']['rt_voltage_set'] = float(self.view.rt_voltage_set_value.text())
         self.config['RT']['rt_current_range'] = float(self.view.rt_current_range_combo.currentData())
-        self.config['RT']['aperture'] = float(self.view.rt_aperture_value.text())
+        self.config['RT']['rt_aperture'] = float(self.view.rt_aperture_value.text())
         
     def timer_function(self, time_out):
         self.timer.start(time_out)
@@ -372,7 +384,7 @@ class MainWindow(qtw.QWidget):
         self.logy_curr_data.clear()
 
         # update all config from the view
-        self.update_config_from_view()
+        # self.update_config_from_view()
 
         # convert the user interface to the value for measurements
 
@@ -527,7 +539,7 @@ class MainWindow(qtw.QWidget):
             self.start_time = time.time()
             # print(f'start_time : {self.start_time}')
             # start the timer for rt measurement here
-            self.timer_function(round(self.config['RT']['aperture'] * 1000))
+            self.timer_function(round(self.config['RT']['rt_aperture'] * 1000))
 
         # set the next state to wait for event
         # after initialization of the device goes to wait_for_event

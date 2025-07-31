@@ -4,3 +4,10 @@
 # Need to be done
 
 - [x] implement log scale displaying
+- [ ] move all feature from view to Configuration Dialog
+- [ ] remove settings in View
+- [ ] reorganize View
+- [ ] save configuration when exit and load when program start
+- [ ] save parameter of View is probably no longer needed
+- [ ] load configurations to Config Dialog
+- [ ] check long time measurement in real time mode?

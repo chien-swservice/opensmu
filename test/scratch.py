@@ -26,8 +26,25 @@ class test(object):
                 'terminal': 'FRONT'
             }
         }
+    def update_config(self, new_config):
+        self.config['IV'].update(new_config['IV'])
+        print("[test] Config updated:", self.config)
 
 
 if __name__ == "__main__":
     test_instance = test()
-    print(test_instance.config['global']['file_name']) 
+    data = {
+            'IV': {
+                'startV': -2.0,
+                'stopV': 1.0,
+                'stepV': 0.1,
+                'voltage_range': 2.0,
+                'current_range': 1e-6,
+                'source_delay_ms': 50,
+               
+            },
+           
+        }
+    test_instance.update_config(data)
+    
+    
