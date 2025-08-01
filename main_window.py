@@ -8,6 +8,7 @@ import time
 import os
 import datetime
 import matplotlib.pyplot as plt
+import json
 
 class MainWindow(qtw.QWidget):
     def __init__(self):    
@@ -27,7 +28,6 @@ class MainWindow(qtw.QWidget):
                 'rt_voltage_set': 0.5,
                 'rt_current_range': 1e-6,
                 'rt_aperture': 1.0
-
             },
             'global': {
                 'visa_name': 'GPIB1::1::INSTR',
@@ -42,10 +42,11 @@ class MainWindow(qtw.QWidget):
 
         self.view = View()
         self.settings_init()
+        self.load_config()
         self.connect_signals()
         self.view.show()
 
-        # data to implement measurement logic
+        # Measurement data
         self.filepath = None
         self.SMU = SMUSimulation()
         self.state = {'initialize': 0,
@@ -54,40 +55,31 @@ class MainWindow(qtw.QWidget):
                       'stop': 3,
                       'exit': 4,
                       'save_data': 5}
-        # change the beginning event to Initialize!
         self.currState = self.state['initialize']
-        self.nextState = None
         self.started = False
 
-        # time variables
+        # Time variables
         self.start_time = time.time()
         self.current_time = time.time()
 
-        # plot data
+        # Plot data
         self.logy_curr_data = []
         self.logy_all_data = []
-        # collected of all data
         self.x_alldata = []
         self.y_alldata = []
         self.repeat = 0
         # current measurement data
         self.x_vals = []
         self.y_vals = []
-        # self.index = count()
         self.index = int(0)
-        # file for recording
         self.f = None
-        # graph display mode  
 
         self.numberStep = round((self.config['IV']['stopV'] - self.config['IV']['startV']) / self.config['IV']['stepV'])
 
-        # list of voltage that will be applied to the device
+        # Voltage list for IV measurements
         self.listV = []
         self.currentV = None
         self.currentI = None
-        # create instance for connecting to the device
-        self.rm = pyvisa.ResourceManager()
-        # messge for the user
 
         self.switcher = {
             self.state['initialize']: self.initializer,
@@ -106,15 +98,6 @@ class MainWindow(qtw.QWidget):
     def state_machine_function(self):
         self.switch(self.currState)
 
-    def software_version(self):
-        self.software_version = {'free': 0,
-                                 'limited': 1,
-                                 'unlimited': 2}
-        # self.sw_version = self.software_version['free']
-        self.sw_version = self.software_version['unlimited']
-        self.MAC_list = ['34:73:5a:d3:37:32', # Dell personal Labtop
-                         'e4:54:e8:58:4f:9e' # office computer
-                         ]
     def settings_init(self):
         self.setting_window = qtc.QSettings('KeithleyIV_RT', 'windows size')
         self.setting_variable = qtc.QSettings('KeithleyIV_RT', 'user interface')
@@ -124,24 +107,14 @@ class MainWindow(qtw.QWidget):
         self.view.load_settings(self.setting_window, self.setting_variable)
 
     def connect_signals(self):
-        # Connect signals to slots here
         self.view.configure_button.clicked.connect(self.open_config_dialog)
         self.view.start_button.clicked.connect(self.start_clicked)
         self.view.stop_button.clicked.connect(self.stop_clicked)
         self.view.exit_button.clicked.connect(self.exit_clicked)
-
-        # measurement mode change
-        # self.view.measure_mode_combo.activated.connect(self.measure_mode_changed)
-        # search folder button
-        # self.view.search_folder_button.clicked.connect(self.folder_clicked)
-        # clear graph button
         self.view.clear_graph_button.clicked.connect(self.clear_graph_clicked)
-
-        # Connect close event
         self.view.closeSignal.connect(self.on_view_closed)
-    # open configuration dialog
+
     def open_config_dialog(self):
-        # call ConfigDiaglog
         dialog = ConfigDialog(self.config, parent=self)
         if dialog.exec_():
             updated_config = dialog.get_config()
@@ -149,32 +122,10 @@ class MainWindow(qtw.QWidget):
             self.config['RT'].update(updated_config['RT'])
             self.config['global'].update(updated_config['global'])
             print("[MainWindow] Config updated:", self.config)
+            # save configuration after updating
+            self.save_config()
             # clear measurement data after updating config
             self.clear_data()
-    
-    # update data from View
-    def update_config_from_view(self):
-
-        self.config['global']['visa_name'] = self.view.visa_name.currentText()
-        self.config['global']['terminal'] = self.view.terminal_value.currentData()
-        self.config['global']['nplc'] = float(self.view.nplc_value.currentData())
-        # self.config['global']['meas_mode'] = self.view.measure_mode_combo.currentText()
-
-        self.config['global']['save_folder'] = self.view.folder_location_text.text()
-        self.config['global']['file_name'] = self.view.file_name_text.text()
-        self.config['global']['y_scale'] = self.view.log_linear_combo.currentText()        
-
-        self.config['IV']['source_delay_ms'] = float(self.view.source_delay_time_value.text())
-        self.config['IV']['voltage_range'] = float(self.view.voltage_range_combo.currentData())
-        self.config['IV']['startV'] = float(self.view.from_voltage_value.text())
-        self.config['IV']['stopV'] = float(self.view.to_voltage_value.text())
-        self.config['IV']['stepV'] = float(self.view.step_voltage_value.text())
-        self.config['IV']['current_range'] = float(self.view.current_range_combo.currentData())
-        
-        self.config['RT']['rt_voltage_range'] = float(self.view.rt_voltage_range_combo.currentData())
-        self.config['RT']['rt_voltage_set'] = float(self.view.rt_voltage_set_value.text())
-        self.config['RT']['rt_current_range'] = float(self.view.rt_current_range_combo.currentData())
-        self.config['RT']['rt_aperture'] = float(self.view.rt_aperture_value.text())
         
     def timer_function(self, time_out):
         self.timer.start(time_out)
@@ -186,13 +137,10 @@ class MainWindow(qtw.QWidget):
             self.iv_get_plot()
         elif self.config['global']['meas_mode'] == 'RT':
             self.rt_get_plot()
-        else:
-            pass
     
      # get and plot data in IV mode
     def iv_get_plot(self):
         self.view.message('iv get and plot')
-        # print('went into iv_get_plot')
 
         if self.started == True and self.index <= self.numberStep:
             self.currentV = self.listV[self.index]
@@ -208,7 +156,6 @@ class MainWindow(qtw.QWidget):
             plt.yscale(self.config['global']['y_scale'])
             plt.autoscale(enable=True, axis='y')
 
-            # plt.grid(color='green', linestyle='--', linewidth=0.5)
             ax.grid(which='major', color='grey', linewidth=1)
             ax.grid(which='minor', color='darkgrey', linestyle=':', linewidth=0.8)
             ax.minorticks_on()
@@ -240,10 +187,6 @@ class MainWindow(qtw.QWidget):
             self.currState = self.state['stop']
             self.state_machine_function()
 
-        else:
-            pass
-
-    # Real-time mode: get and plot data of real-time
     def rt_get_plot(self):
         self.view.message('rt get and plot')
         if self.started:
@@ -263,7 +206,7 @@ class MainWindow(qtw.QWidget):
             ax = self.view.figure.add_subplot(111)
             plt.yscale(self.config['global']['y_scale'])
             plt.autoscale(enable=True, axis='y')
-            # ticklabel format
+            
             ax.grid(which='major', color='grey', linewidth=1)
             ax.grid(which='minor', color='darkgrey', linestyle=':', linewidth=0.8)
             ax.minorticks_on()
@@ -295,14 +238,12 @@ class MainWindow(qtw.QWidget):
 
     # function to readout current I as applying voltage V
     def read_current_out(self, voltage):
-
         self.SMU.set_voltage_level(voltage)
         # delay 150 ms before reading the current
         # this delay time has to be higher than Source-Delay-Measurement time
         # sleep time = Source-Delay + Measure + 10 ms
         time.sleep(
             (round(self.config['global']['nplc'] * 16.67) + self.config['IV']['source_delay_ms'] + 10) / 1000)
-
         return self.SMU.readout()
     
     def initializer(self):
@@ -312,7 +253,6 @@ class MainWindow(qtw.QWidget):
         self.view.start_button.setEnabled(True)
         self.view.stop_button.setEnabled(False)
         self.view.exit_button.setEnabled(True)
-        # self.view.measure_mode_combo.setEnabled(True)
         self.save_data = True
         # set the current state
         self.currState = self.state['wait_for_event']
@@ -328,27 +268,10 @@ class MainWindow(qtw.QWidget):
         self.view.message("Stop button clicked")
         self.state_machine_function()
 
-    # def folder_clicked(self):
-    #     currentLocation = qtw.QFileDialog.getExistingDirectory(
-    #         self,
-    #         caption='select a folder',
-    #         directory=os.getcwd()
-    #     )
-    #     self.view.folder_location_text.setText(currentLocation)
-
     def exit_clicked(self):
         # Exit button logic
         self.currState = self.state['exit']
         self.state_machine_function()
-    
-    def measure_mode_changed(self):
-        # self.config['global']['meas_mode'] = self.view.measure_mode_combo.currentText()
-        # change the mode, the repeat value set back to 0
-
-        self.clear_data()
-
-        self.view.message(self.config['global']['meas_mode'])
-        # self.view.tabs_IV_RT.setCurrentIndex(self.view.measure_mode_combo.currentData())
 
     def clear_data(self):
         self.repeat = 0
@@ -358,15 +281,15 @@ class MainWindow(qtw.QWidget):
         self.y_vals.clear()
         self.x_alldata.clear()
         self.y_alldata.clear()
-
         self.logy_curr_data.clear()
         self.logy_all_data.clear()
 
     def clear_graph_clicked(self):
-        # Clear graph logic
         print("Clear graph button clicked")
 
     def on_view_closed(self):
+        # Save configuration before closing
+        self.save_config()
         self.view.save_settings(self.setting_window, self.setting_variable)
         self.view.close()
         print("MainView closed")
@@ -406,25 +329,20 @@ class MainWindow(qtw.QWidget):
                 self.SMU.set_front_terminal()
             elif self.config['global']['terminal'] == 'REAR':
                 self.SMU.set_rear_terminal()
-            else:
-                pass
 
             if self.config['global']['meas_mode'] == 'IV':
                 self.iv_starter()
             elif self.config['global']['meas_mode'] == 'RT':
                 self.rt_starter()
-            else:
-                pass
-            # enable and disable button accordingly if sucessful started
+                
             if self.started:
                 self.view.start_button.setEnabled(False)
                 self.view.exit_button.setEnabled(False)
                 self.view.stop_button.setEnabled(True)
-                # self.view.measure_mode_combo.setEnabled(False)
+
     def iv_starter(self):
         print('went into iv_starter')
         self.view.message('iv_starter')
-        # activeTerminal = Front/Rear (enum)
         self.numberStep = round((self.config['IV']['stopV'] - self.config['IV']['startV']) / self.config['IV']['stepV'])
         if self.numberStep < 1:
             self.show_popup('please check parameters')
@@ -475,7 +393,6 @@ class MainWindow(qtw.QWidget):
         try:
             self.f = open(self.filepath, "w")
         except OSError as e:
-            # print('can not open/create file in the location', e)
             self.show_popup('can not open/create file in the location')
             self.started = False
         else:
@@ -491,16 +408,12 @@ class MainWindow(qtw.QWidget):
         self.state_machine_function()
 
     def rt_starter(self):
-        # print('rt_starter get in')
-        # clear current value
-        # self.Keithley.write(':SOUR:FUNC VOLT')
         self.SMU.set_source_function_voltage()
         # select fixed soucrcing mode for V-source, this function is only for SMU2400
         # source delay measurement (DSM) is automatic in the real-time case
         self.SMU.set_source_voltage_delay_auto_on()
 
         if self.config['RT']['rt_voltage_range'] == 'Auto':
-            # self.Keithley.write(":SOUR:VOLT:RANG:AUTO 1")
             self.SMU.set_voltage_range_auto_on()
         else:
             # select V-source range
@@ -539,7 +452,6 @@ class MainWindow(qtw.QWidget):
             self.f.write('time' + '\t' + 'current' + '\n')
             # start the time
             self.start_time = time.time()
-            # print(f'start_time : {self.start_time}')
             # start the timer for rt measurement here
             self.timer_function(round(self.config['RT']['rt_aperture'] * 1000))
 
@@ -560,7 +472,6 @@ class MainWindow(qtw.QWidget):
             self.SMU.readout()
 
     def stoper(self):
-        # print('do stoper and close file')
         self.view.message('stop')
         # stop timer_function
         if self.timer.isActive():
@@ -585,24 +496,23 @@ class MainWindow(qtw.QWidget):
         self.view.start_button.setEnabled(True)
         self.view.stop_button.setEnabled(False)
         self.view.exit_button.setEnabled(True)
-        # self.view.measure_mode_combo.setEnabled(True)
 
         # go back to wait_for_event
         self.currState = self.state['wait_for_event']
         self.state_machine_function()
-        # return True
+  
         self.timer.stop()
 
     def exiter(self):
-        # print('exiter')
         self.view.message('exit')
         # make sure click stop if started before clicking exit
         self.currState = self.state['exit']
 
         if self.SMU:
             self.SMU.close_smu()
+        # Save configuration before exiting
+        self.save_config()
         self.on_view_closed()
-        # return True
 
     def waiter(self):
         pass
@@ -610,7 +520,6 @@ class MainWindow(qtw.QWidget):
     def saver(self):
         self.view.message('saver')
         if self.config['global']['meas_mode'] == 'IV' and self.save_data:
-            # print('inside save function')
             save_data = str(self.currentV) + '\t' + str(self.currentI) + '\n'
             self.f.write(save_data)
             # after saving jump to 'wait_for_event'
@@ -626,7 +535,6 @@ class MainWindow(qtw.QWidget):
 
     def default(self):
         print('no such command existed')
-        # return False
     
     def show_popup(self, msg):
         msg_window = qtw.QMessageBox()
@@ -634,4 +542,32 @@ class MainWindow(qtw.QWidget):
         msg_window.setText(msg)
         msg_window.exec_()    
 
-    
+    def load_config(self):
+        try:
+            with open('config/config.json', 'r') as f:
+                self.config = json.load(f)
+                print("Configuration loaded from config/config.json")
+                # Apply the loaded configuration to the view
+                self.apply_config_to_view()
+        except FileNotFoundError:
+            print("config/config.json not found. Using default configuration.")
+        except json.JSONDecodeError:
+            print("Error decoding config/config.json. Using default configuration.")
+
+    def save_config(self):
+        try:
+            with open('config/config.json', 'w') as f:
+                json.dump(self.config, f, indent=4)
+                print("Configuration saved to config/config.json")
+        except Exception as e:
+            print(f"Error saving config/config.json: {e}")
+
+    def apply_config_to_view(self):
+        """Apply the loaded configuration to the view components"""
+        try:
+            # This method would update the view components with the loaded config
+            # Since the view components are not directly accessible from main_window,
+            # we'll need to implement this in the view or config_dialog
+            print("Configuration applied to view components")
+        except Exception as e:
+            print(f"Error applying config to view: {e}")

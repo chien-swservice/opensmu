@@ -17,6 +17,10 @@ class ConfigDialog(qtw.QDialog):
         self._build_smu_box()
         self._build_iv_rt_tab()
         self._build_file_dialog_box()
+        
+        # Apply the loaded configuration to the dialog components
+        self.apply_config_to_dialog()
+        
         self.buttonBox = qtw.QDialogButtonBox(qtw.QDialogButtonBox.Ok | qtw.QDialogButtonBox.Cancel)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
@@ -287,6 +291,78 @@ class ConfigDialog(qtw.QDialog):
         # except Exception as e:
         #     print(f"View Error loading settings: {e}")
     
+    def apply_config_to_dialog(self):
+        """Apply the loaded configuration to the dialog components"""
+        try:
+            # Apply global settings
+            if 'visa_name' in self.config['global']:
+                self.visa_name.setCurrentText(self.config['global']['visa_name'])
+            if 'terminal' in self.config['global']:
+                terminal_value = self.config['global']['terminal']
+                for i in range(self.terminal_value.count()):
+                    if self.terminal_value.itemData(i) == terminal_value:
+                        self.terminal_value.setCurrentIndex(i)
+                        break
+            if 'nplc' in self.config['global']:
+                nplc_value = self.config['global']['nplc']
+                for i in range(self.nplc_value.count()):
+                    if self.nplc_value.itemData(i) == nplc_value:
+                        self.nplc_value.setCurrentIndex(i)
+                        break
+            if 'meas_mode' in self.config['global']:
+                self.measure_mode_combo.setCurrentText(self.config['global']['meas_mode'])
+            
+            # Apply IV settings
+            if 'source_delay_ms' in self.config['IV']:
+                self.source_delay_time_value.setText(str(self.config['IV']['source_delay_ms']))
+            if 'voltage_range' in self.config['IV']:
+                voltage_range = self.config['IV']['voltage_range']
+                for i in range(self.voltage_range_combo.count()):
+                    if self.voltage_range_combo.itemData(i) == voltage_range:
+                        self.voltage_range_combo.setCurrentIndex(i)
+                        break
+            if 'startV' in self.config['IV']:
+                self.from_voltage_value.setText(str(self.config['IV']['startV']))
+            if 'stopV' in self.config['IV']:
+                self.to_voltage_value.setText(str(self.config['IV']['stopV']))
+            if 'stepV' in self.config['IV']:
+                self.step_voltage_value.setText(str(self.config['IV']['stepV']))
+            if 'current_range' in self.config['IV']:
+                current_range = self.config['IV']['current_range']
+                for i in range(self.current_range_combo.count()):
+                    if self.current_range_combo.itemData(i) == current_range:
+                        self.current_range_combo.setCurrentIndex(i)
+                        break
+            
+            # Apply RT settings
+            if 'rt_voltage_range' in self.config['RT']:
+                rt_voltage_range = self.config['RT']['rt_voltage_range']
+                for i in range(self.rt_voltage_range_combo.count()):
+                    if self.rt_voltage_range_combo.itemData(i) == rt_voltage_range:
+                        self.rt_voltage_range_combo.setCurrentIndex(i)
+                        break
+            if 'rt_voltage_set' in self.config['RT']:
+                self.rt_voltage_set_value.setText(str(self.config['RT']['rt_voltage_set']))
+            if 'rt_current_range' in self.config['RT']:
+                rt_current_range = self.config['RT']['rt_current_range']
+                for i in range(self.rt_current_range_combo.count()):
+                    if self.rt_current_range_combo.itemData(i) == rt_current_range:
+                        self.rt_current_range_combo.setCurrentIndex(i)
+                        break
+            if 'rt_aperture' in self.config['RT']:
+                self.rt_aperture_value.setText(str(self.config['RT']['rt_aperture']))
+            
+            # Apply file and plot settings
+            if 'save_folder' in self.config['global']:
+                self.folder_location_text.setText(self.config['global']['save_folder'])
+            if 'file_name' in self.config['global']:
+                self.file_name_text.setText(self.config['global']['file_name'])
+            if 'y_scale' in self.config['global']:
+                self.log_linear_combo.setCurrentText(self.config['global']['y_scale'])
+                
+        except Exception as e:
+            print(f"Error applying config to dialog: {e}")
+
     def save_settings(self, setting_window: qtc.QSettings, setting_variable: qtc.QSettings):
         pass
         # from View
@@ -304,7 +380,7 @@ class ConfigDialog(qtw.QDialog):
         # setting_variable.setValue('v_range', self.voltage_range_combo.currentText())
         # setting_variable.setValue('from_v', self.from_voltage_value.text())
         # setting_variable.setValue('to_v', self.to_voltage_value.text())
-        # setting_variable.setValue('step_v', self.step_voltage_value.text())
+        # setting_variable.setValue('step_v', self.source_delay_time_value.text())
         # setting_variable.setValue('i_range', self.current_range_combo.currentText())
 
         # # # RT parameters
