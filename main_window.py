@@ -100,11 +100,10 @@ class MainWindow(qtw.QWidget):
 
     def settings_init(self):
         self.setting_window = qtc.QSettings('KeithleyIV_RT', 'windows size')
-        self.setting_variable = qtc.QSettings('KeithleyIV_RT', 'user interface')
         self.timer = qtc.QTimer()
         self.timer.timeout.connect(self.timeOutEvent)
         # load saved settings into the view
-        self.view.load_settings(self.setting_window, self.setting_variable)
+        self.view.load_settings(self.setting_window)
 
     def connect_signals(self):
         self.view.configure_button.clicked.connect(self.open_config_dialog)
@@ -290,7 +289,7 @@ class MainWindow(qtw.QWidget):
     def on_view_closed(self):
         # Save configuration before closing
         self.save_config()
-        self.view.save_settings(self.setting_window, self.setting_variable)
+        self.view.save_settings(self.setting_window)
         self.view.close()
         print("MainView closed")
         
@@ -515,7 +514,9 @@ class MainWindow(qtw.QWidget):
         self.on_view_closed()
 
     def waiter(self):
-        pass
+        # wait for 10 ms
+        time.sleep(0.01)
+        
 
     def saver(self):
         self.view.message('saver')

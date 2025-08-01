@@ -73,8 +73,8 @@ class View(qtw.QWidget):
 
         self.left_layout.addWidget(_communication_box)
     
-    def load_settings(self, setting_window: qtc.QSettings, setting_variable: qtc.QSettings):
-        # load settings from setting_window and setting_variable
+    def load_settings(self, setting_window: qtc.QSettings):
+        # load settings from setting_window
 
         try:
             self.resize(setting_window.value('window_size'))
@@ -84,7 +84,7 @@ class View(qtw.QWidget):
         except Exception as e:
             print(f"View Error loading settings: {e}")
 
-    def save_settings(self, setting_window: qtc.QSettings, setting_variable: qtc.QSettings):
+    def save_settings(self, setting_window: qtc.QSettings):
         setting_window.setValue('window_size', self.size())
         setting_window.setValue('window_position', self.pos())
 
