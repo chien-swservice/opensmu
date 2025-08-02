@@ -9,6 +9,7 @@ import os
 import datetime
 import matplotlib.pyplot as plt
 import json
+import sys
 
 class MainWindow(qtw.QWidget):
     def __init__(self):    
@@ -120,6 +121,9 @@ class MainWindow(qtw.QWidget):
     
     def state_machine_function(self):
         """Execute current state"""
+        print("DEBUG: state_machine_function called!")
+        print("current state: " + str(self.currState))
+        sys.stdout.flush()
         self.switch(self.currState)
     
     def settings_init(self):
@@ -158,6 +162,7 @@ class MainWindow(qtw.QWidget):
     
     def timeOutEvent(self):
         """Handle timer timeout event"""
+        print("go to main_window timeOutEvent")
         if self.config['global']['meas_mode'] == 'IV':
             self.iv_get_plot()
         elif self.config['global']['meas_mode'] == 'RT':
@@ -252,11 +257,7 @@ class MainWindow(qtw.QWidget):
             self.index += 1
             
             # Continue measurement if not finished
-            if self.index < len(self.listV):
-                # Restart timer for next measurement
-                timeout = int(round(self.config['global']['nplc'] * 16.67) + self.config['IV']['source_delay_ms'] + 50)
-                self.timer_function(timeout)
-            else:
+            if self.index >= len(self.listV):
                 # Measurement complete
                 self.currState = self.state['save_data']
                 self.state_machine_function()
@@ -266,6 +267,7 @@ class MainWindow(qtw.QWidget):
     
     def rt_get_plot(self):
         """Handle RT measurement plotting"""
+        print("go to main_window rt_get_plot")
         current = self.SMU.readout()
         current_time = time.time() - self.start_time
         
@@ -278,11 +280,9 @@ class MainWindow(qtw.QWidget):
             self.f.flush()
         
         # Update plot
-        self.view.plot_rt(self.x_vals, self.y_vals, self.config['global']['y_scale'], 
-                          self.x_alldata, self.y_alldata)
         
-        # Restart timer
-        self.timer_function(int(round(self.config['RT']['rt_aperture'] * 1000)))
+        self.view.plot_rt(self.x_vals, self.y_vals, self.config['global']['y_scale'], 
+                          self.x_alldata, self.y_alldata, self.repeat)
     
     def read_current_out(self, voltage):
         """Read current output for given voltage"""
@@ -298,6 +298,7 @@ class MainWindow(qtw.QWidget):
     def start_clicked(self):
         """Handle start button click"""
         self.currState = self.state['start']
+        print("start_clicked") # debug
         self.state_machine_function()
     
     def stop_clicked(self):
@@ -427,6 +428,10 @@ class MainWindow(qtw.QWidget):
         # Write header and start measurement
         self.f.write('time\tcurrent\n')
         self.start_time = time.time()
+        
+        # Reset current data for new measurement run
+        self._clear_current_data()
+        
         self.timer_function(int(round(self.config['RT']['rt_aperture'] * 1000)))
         
         self.currState = self.state['wait_for_event']
@@ -483,7 +488,8 @@ class MainWindow(qtw.QWidget):
     
     def waiter(self):
         """Wait state - do nothing for 10ms"""
-        time.sleep(0.01)
+        print("go to main_window waiter")
+
     
     def saver(self):
         """Save data state"""

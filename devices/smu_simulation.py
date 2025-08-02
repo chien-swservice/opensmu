@@ -65,9 +65,9 @@ class SMUSimulation(SMUBase):
         print(f"[SIM] Voltage range set to {voltage_range} V")
 
     def set_voltage_level(self, voltage_level):
-        # voltage_level is a string
-        self.voltage = voltage_level
-        print(f"[SIM] Voltage level set to {voltage_level} V")
+        # voltage_level can be string or float, ensure it's float
+        self.voltage = float(voltage_level)
+        print(f"[SIM] Voltage level set to {self.voltage} V")
 
     def set_measure_mode_current(self):
         print("[SIM] Measure mode: current")
