@@ -1,0 +1,402 @@
+"""
+SMU Model - Business logic for SMU operations
+"""
+import time
+import os
+import datetime
+import json
+import pyvisa
+from typing import Dict, Any, Optional, Tuple, List
+from devices.smu_simulation import SMUSimulation
+from .measurement_data import MeasurementData
+
+
+class SMUModel:
+    """Model class for SMU operations - handles all business logic"""
+    
+    def __init__(self):
+        """Initialize the SMU model"""
+        self.config = self._init_default_config()
+        self.data = MeasurementData()
+        self.SMU = SMUSimulation()
+        self.started = False
+        self.last_meas_mode = self.config['global']['meas_mode']
+        
+        # State machine
+        self.state = {
+            'initialize': 0,
+            'wait_for_event': 1,
+            'start': 2,
+            'stop': 3,
+            'exit': 4,
+            'save_data': 5
+        }
+        self.currState = self.state['initialize']
+        
+        self.switcher = {
+            self.state['initialize']: self.initializer,
+            self.state['start']: self.starter,
+            self.state['stop']: self.stoper,
+            self.state['exit']: self.exiter,
+            self.state['wait_for_event']: self.waiter,
+            self.state['save_data']: self.saver
+        }
+    
+    def _init_default_config(self) -> Dict[str, Any]:
+        """Initialize default configuration"""
+        return {
+            'IV': {
+                'source_delay_ms': 50,
+                'voltage_range': 2.0,
+                'startV': -1.0,
+                'stopV': 1.0,
+                'stepV': 0.1,
+                'current_range': 1e-6                
+            },
+            'RT': {
+                'rt_voltage_range': 2.0,
+                'rt_voltage_set': 0.5,
+                'rt_current_range': 1e-6,
+                'rt_aperture': 1.0
+            },
+            'global': {
+                'visa_name': 'GPIB1::1::INSTR',
+                'terminal': 'FRONT',
+                'nplc': 1.0,
+                'meas_mode': 'IV',
+                'save_folder': os.path.join(os.getcwd(), 'data'),
+                'file_name': 'data',
+                'y_scale': 'linear'              
+            }
+        }
+    
+    def load_config(self) -> bool:
+        """Load configuration from file"""
+        try:
+            with open('config/config.json', 'r') as f:
+                self.config = json.load(f)
+                print("Configuration loaded from config/config.json")
+                return True
+        except FileNotFoundError:
+            print("config/config.json not found. Using default configuration.")
+            return False
+        except json.JSONDecodeError:
+            print("Error decoding config/config.json. Using default configuration.")
+            return False
+    
+    def save_config(self) -> bool:
+        """Save configuration to file"""
+        try:
+            with open('config/config.json', 'w') as f:
+                json.dump(self.config, f, indent=4)
+                print("Configuration saved to config/config.json")
+                return True
+        except Exception as e:
+            print(f"Error saving config/config.json: {e}")
+            return False
+    
+    def update_config(self, new_config: Dict[str, Any]) -> None:
+        """Update configuration"""
+        self.config['IV'].update(new_config['IV'])
+        self.config['RT'].update(new_config['RT'])
+        self.config['global'].update(new_config['global'])
+        self.save_config()
+    
+    # State machine methods
+    def switch(self, currentState: int) -> None:
+        """State machine switch function"""
+        return self.switcher.get(currentState, self.default)()
+    
+    def state_machine_function(self) -> None:
+        """Execute current state"""
+        print(f"go to state_machine_function, current state: {self.currState}")
+        self.switch(self.currState)
+    
+    def initializer(self) -> None:
+        """Initialize state"""
+        self.currState = self.state['wait_for_event']
+    
+    def waiter(self) -> None:
+        """Wait state - do nothing, just return"""
+        print("go to main_window waiter")
+    
+    def starter(self) -> None:
+        """Start measurement process"""
+        self.started = True
+        self.data.index = 0
+        print('Started measurement')
+        
+        # Only clear data if measurement mode changed
+        if self.last_meas_mode != self.config['global']['meas_mode']:
+            self.data.clear_all_data()
+        
+        # Store current measurement mode
+        self.last_meas_mode = self.config['global']['meas_mode']
+        
+        if not self._setup_smu_connection():
+            return
+        
+        self._configure_smu_basic()
+        
+        # The specific starters (iv_starter, rt_starter) are called by the presenter
+        # after setting up the timer
+    
+    def stoper(self) -> None:
+        """Stop measurement process"""
+        print('stop')
+        
+        # Close file
+        if self.data.file_handle and not self.data.file_handle.closed:
+            self.data.file_handle.close()
+        
+        # Reset SMU
+        self.SMU.reset_smu()
+        self.SMU.set_output_off()
+        self.SMU.close_smu()
+        self.started = False
+        self.data.repeat += 1
+        
+        # Save current data
+        self.data.save_current_data()
+        
+        # Return to wait state
+        self.currState = self.state['wait_for_event']
+    
+    def exiter(self) -> None:
+        """Exit application"""
+        print('exit')
+        if self.started:
+            self.currState = self.state['stop']
+        # Don't call state_machine_function() here - let the presenter handle the exit
+    
+    def saver(self) -> None:
+        """Save data state"""
+        if self.data.file_handle and not self.data.file_handle.closed:
+            self.data.file_handle.close()
+        
+        self.currState = self.state['stop']
+    
+    def default(self) -> None:
+        """Default state handler"""
+        print("Unknown state")
+    
+    # SMU connection methods
+    def _setup_smu_connection(self) -> bool:
+        """Setup SMU connection with error handling"""
+        try:
+            self.SMU.create_smu_connector(self.config['global']['visa_name'])
+            return True
+        except pyvisa.VisaIOError:
+            print('Unable to connect to the device, please check the connection!')
+            self.currState = self.state['wait_for_event']
+            return False
+    
+    def _configure_smu_basic(self) -> None:
+        """Configure basic SMU settings"""
+        self.SMU.reset_smu()
+        self.SMU.timeout_smu(25000)
+        
+        # Set terminal
+        if self.config['global']['terminal'] == 'FRON':
+            self.SMU.set_front_terminal()
+        elif self.config['global']['terminal'] == 'REAR':
+            self.SMU.set_rear_terminal()
+    
+    def _configure_voltage_source(self, voltage_range: float, voltage_level: float) -> None:
+        """Configure voltage source settings"""
+        self.SMU.set_source_function_voltage()
+        
+        if voltage_range == 0:
+            self.SMU.set_voltage_range_auto_on()
+        else:
+            self.SMU.set_voltage_range_value(voltage_range)
+        
+        self.SMU.set_voltage_level(voltage_level)
+    
+    def _configure_current_measurement(self, current_range: float) -> None:
+        """Configure current measurement settings"""
+        self.SMU.set_measure_mode_current()
+        self.SMU.set_measure_current_range(current_range)
+        self.SMU.set_measure_current_limit(current_range)
+        self.SMU.set_measure_current_nplc(self.config['global']['nplc'])
+    
+    def _create_data_file(self, mode_prefix: str) -> bool:
+        """Create data file for measurements"""
+        currentTime = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S')
+        file_name = f'{mode_prefix}{self.config["global"]["file_name"]}{currentTime}.txt'
+        self.data.filepath = os.path.join(self.config['global']['save_folder'], file_name)
+        
+        try:
+            self.data.file_handle = open(self.data.filepath, "w")
+            return True
+        except OSError:
+            print('Cannot open/create file in the location')
+            self.started = False
+            return False
+    
+    def goto_voltage(self, set_voltage: float, num_step: int) -> None:
+        """Gradually increase voltage to target value"""
+        delta_voltage = set_voltage / num_step
+        for i in range(num_step + 1):
+            output_voltage = i * delta_voltage
+            self.SMU.set_voltage_level(output_voltage)
+            time.sleep(0.01)
+            self.SMU.readout()
+    
+    # IV measurement methods
+    def iv_starter(self) -> None:
+        """Start IV measurement"""
+        print('Starting IV measurement')
+        
+        self.data.numberStep = round((self.config['IV']['stopV'] - self.config['IV']['startV']) / self.config['IV']['stepV'])
+        if self.data.numberStep < 1:
+            print('Please check parameters')
+            return
+        
+        # Create voltage list
+        self.data.x_vals.clear()
+        self.data.y_vals.clear()
+        self.data.listV.clear()
+        for i in range(self.data.numberStep + 1):
+            value = self.config['IV']['startV'] + i * self.config['IV']['stepV']
+            self.data.listV.append(value)
+        
+        # Configure SMU for IV measurement
+        self._configure_voltage_source(self.config['IV']['voltage_range'], 0.0)
+        self.SMU.set_source_voltage_delay_auto_off()
+        self.SMU.set_source_voltage_delay_time(self.config['IV']['source_delay_ms'])
+        self._configure_current_measurement(self.config['IV']['current_range'])
+        self.SMU.set_output_on()
+        
+        # Go to start voltage
+        self.goto_voltage(self.config['IV']['startV'], 10)
+        
+        # Create data file
+        if not self._create_data_file('IV'):
+            return
+        
+        # Write header to file
+        self.data.file_handle.write('voltage\tcurrent\n')
+        
+        # Calculate timeout for IV measurement
+        timeout = int(round(self.config['global']['nplc'] * 16.67) + self.config['IV']['source_delay_ms'] + 50)
+        
+        # Start measurement
+        self.currState = self.state['wait_for_event']
+        self.state_machine_function()
+        
+        return timeout
+    
+    def iv_get_plot(self) -> Tuple[List[float], List[float]]:
+        """Handle IV measurement plotting - returns (x_vals, y_vals)"""
+        if self.data.index < len(self.data.listV):
+            voltage = self.data.listV[self.data.index]
+            current = self.read_current_out(voltage)
+            
+            self.data.x_vals.append(voltage)
+            self.data.y_vals.append(current)
+            self.data.logy_curr_data.append(abs(current))
+            
+            # Write to file
+            if self.data.file_handle and not self.data.file_handle.closed:
+                self.data.file_handle.write(f'{voltage}\t{current}\n')
+                self.data.file_handle.flush()
+            
+            self.data.index += 1
+            
+            # Continue measurement if not finished
+            if self.data.index >= len(self.data.listV):
+                # Measurement complete
+                self.currState = self.state['save_data']
+        else:
+            self.currState = self.state['save_data']
+        
+        return self.data.x_vals, self.data.y_vals
+    
+    def read_current_out(self, voltage: float) -> float:
+        """Read current output for given voltage"""
+        self.SMU.set_voltage_level(voltage)
+        time.sleep(self.config['IV']['source_delay_ms'] / 1000.0)
+        return self.SMU.readout()
+    
+    # RT measurement methods
+    def rt_starter(self) -> None:
+        """Start RT measurement"""
+        print('Starting RT measurement')
+        
+        # Configure SMU for RT measurement
+        self._configure_voltage_source(self.config['RT']['rt_voltage_range'], self.config['RT']['rt_voltage_set'])
+        self.SMU.set_source_voltage_delay_auto_on()
+        self._configure_current_measurement(self.config['RT']['rt_current_range'])
+        self.SMU.set_output_on()
+        
+        # Go to voltage set point
+        if self.data.repeat == 0:
+            self.goto_voltage(self.config['RT']['rt_voltage_set'], 10)
+        else:
+            self.SMU.set_voltage_level(self.config['RT']['rt_voltage_set'])
+            time.sleep(0.05)
+        
+        # Create data file
+        if not self._create_data_file('RT'):
+            return
+        
+        # Write header and start measurement
+        self.data.file_handle.write('time\tcurrent\n')
+        
+        # Reset current data for new measurement run
+        self.data.reset_for_new_measurement()
+        
+        # Set start time AFTER SMU setup but BEFORE first measurement
+        self.data.start_time = time.time()
+        
+        # Calculate timeout for RT measurement
+        timeout = int(round(self.config['RT']['rt_aperture'] * 1000))
+        
+        self.currState = self.state['wait_for_event']
+        self.state_machine_function()
+        
+        return timeout
+    
+    def rt_get_plot(self) -> Tuple[List[float], List[float]]:
+        """Handle RT measurement plotting - returns (x_vals, y_vals)"""
+        print("go to main_window rt_get_plot")
+        current = self.SMU.readout()
+        current_time = time.time() - self.data.start_time
+        
+        self.data.x_vals.append(current_time)
+        self.data.y_vals.append(current)
+        
+        # Write to file
+        if self.data.file_handle and not self.data.file_handle.closed:
+            self.data.file_handle.write(f'{current_time}\t{current}\n')
+            self.data.file_handle.flush()
+        
+        return self.data.x_vals, self.data.y_vals
+    
+    # Public interface methods
+    def get_measurement_data(self) -> MeasurementData:
+        """Get current measurement data"""
+        return self.data
+    
+    def get_config(self) -> Dict[str, Any]:
+        """Get current configuration"""
+        return self.config
+    
+    def is_started(self) -> bool:
+        """Check if measurement is started"""
+        return self.started
+    
+    def get_current_state(self) -> int:
+        """Get current state"""
+        return self.currState
+    
+    def set_state(self, state: int) -> None:
+        """Set current state"""
+        self.currState = state
+        self.state_machine_function()
+    
+    def clear_data(self) -> None:
+        """Clear all measurement data"""
+        self.data.clear_all_data()
+        self.last_meas_mode = None 

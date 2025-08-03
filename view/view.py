@@ -94,87 +94,56 @@ class View(qtw.QWidget):
     def plot_rt(self, x_vals, y_vals, y_scale='linear', x_alldata=None, y_alldata=None, repeat=0):
         print("call plot_rt")
         """Plot real-time measurement data"""
-        # self.figure.clear()
-        # ax = self.figure.add_subplot(111)
-        
-        # # Configure plot settings
-        # ax.grid(which='major', color='grey', linewidth=1)
-        # ax.grid(which='minor', color='darkgrey', linestyle=':', linewidth=0.8)
-        # ax.minorticks_on()
-        
-        # plt.title("Real-time measurement", fontsize=20, fontweight='bold')
-        # plt.xlabel("time (s)", fontsize=18, fontweight='bold')
-        # plt.ylabel("current (A)", fontsize=18, fontweight='bold')
-        # plt.rcParams['xtick.labelsize'] = 16
-        # plt.rcParams['ytick.labelsize'] = 16
-        
-        # # Set y-scale
-        # if y_scale == 'log':
-        #     ax.set_yscale('log')
-        #     plt.ylabel("|current| (A)", fontsize=18, fontweight='bold')
-        
-        # # Define colors for different curves
-        # colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
-        
-        # Plot previous measurements (history) with different colors and transparency
-        # if x_alldata and y_alldata:
-        #     for i in range(len(x_alldata)):
-        #         if y_scale == 'log':
-        #             plot_y_vals = [abs(y) for y in y_alldata[i]]
-        #         else:
-        #             plot_y_vals = y_alldata[i]
-        #         color = colors[i % len(colors)]
-        #         # Higher transparency for older measurements
-        #         alpha = max(0.2, 0.8 - (i * 0.1))
-        #         ax.plot(x_alldata[i], plot_y_vals, color=color, linewidth=1.5, alpha=alpha, label=f'Run {i+1}')
-        
-        # plot history data
-        
-        # Plot current data
-        # if x_vals and y_vals:
-        #     if y_scale == 'log':
-        #         plot_y_vals = [abs(y) for y in y_vals]
-        #     else:
-        #         plot_y_vals = y_vals
-        #     current_color = colors[len(x_alldata) % len(colors)] if x_alldata else 'blue'
-        #     ax.plot(x_vals, plot_y_vals, color=current_color, linewidth=2.5, alpha=1.0, label='Current')
-        
-        # # Add legend if there are multiple curves
-        # if (x_alldata and len(x_alldata) > 0) or (x_vals and len(x_vals) > 0):
-        #     ax.legend()
-        
-        # Update canvas
-        # self.canvas.draw()
-
-        # take the old version
         self.figure.clear()
         ax = self.figure.add_subplot(111)
-        plt.yscale(y_scale)
-        plt.autoscale(enable=True, axis='y')
-        # ticklabel format
+        
+        # Configure plot settings
         ax.grid(which='major', color='grey', linewidth=1)
         ax.grid(which='minor', color='darkgrey', linestyle=':', linewidth=0.8)
         ax.minorticks_on()
+        
         plt.title("Real-time measurement", fontsize=20, fontweight='bold')
         plt.xlabel("time (s)", fontsize=18, fontweight='bold')
         plt.ylabel("current (A)", fontsize=18, fontweight='bold')
         plt.rcParams['xtick.labelsize'] = 16
         plt.rcParams['ytick.labelsize'] = 16
-
-        # plot history data
         
-        for i in range(repeat):
-            if y_scale == 'linear':
-                ax.plot(x_alldata[i], y_alldata[i])
+        # Set y-scale
+        if y_scale == 'log':
+            ax.set_yscale('log')
+            plt.ylabel("|current| (A)", fontsize=18, fontweight='bold')
+        
+        # Define colors for different curves
+        colors = ['red', 'blue', 'green', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan']
+        
+        # Plot previous measurements (history) with different colors and transparency
+        if x_alldata and y_alldata and len(x_alldata) > 0:
+            for i in range(len(x_alldata)):
+                if i < len(x_alldata) and i < len(y_alldata):
+                    if y_scale == 'log':
+                        plot_y_vals = [abs(y) for y in y_alldata[i]]
+                    else:
+                        plot_y_vals = y_alldata[i]
+                    color = colors[i % len(colors)]
+                    # Higher transparency for older measurements
+                    alpha = max(0.2, 0.8 - (i * 0.1))
+                    ax.plot(x_alldata[i], plot_y_vals, color=color, linewidth=1.5, alpha=alpha, 
+                           marker='o', markersize=3, label=f'Run {i+1}')
+        
+        
+        # Plot current data
+        if x_vals and y_vals:
+            if y_scale == 'log':
+                plot_y_vals = [abs(y) for y in y_vals]
             else:
-                ax.plot(x_alldata[i], [abs(y) for y in y_alldata[i]])
+                plot_y_vals = y_vals
+            current_color = colors[len(x_alldata) % len(colors)] if x_alldata else 'blue'
+            ax.plot(x_vals, plot_y_vals, color=current_color, linewidth=2.5, alpha=1.0, 
+                   marker='o', markersize=4, label='Current')
         
-        # plot current data
-        
-        if y_scale == 'linear':
-            ax.plot(x_vals, y_vals)
-        else:
-            ax.plot(x_vals, [abs(y) for y in y_vals])
+        # Add legend if there are multiple curves
+        if (x_alldata and len(x_alldata) > 0) or (x_vals and len(x_vals) > 0):
+            ax.legend()
         
         # Update canvas
         self.canvas.draw()
