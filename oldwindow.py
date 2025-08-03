@@ -907,6 +907,7 @@ class MainWindow(qtw.QWidget):
 
     # state machine
     def state_machine_function(self):
+        print(f"go to state_machine_function, current state: {self.currState}")
         self.switch(self.currState)
 
     def show_popup(self, msg):

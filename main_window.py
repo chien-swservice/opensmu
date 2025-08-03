@@ -14,6 +14,9 @@ import sys
 class MainWindow(qtw.QWidget):
     def __init__(self):    
         super().__init__()
+        # Initialize closing flag first to prevent AttributeError
+        self.closing = False
+        
         self._init_config()
         self._init_ui()
         self._init_measurement_data()
@@ -121,9 +124,10 @@ class MainWindow(qtw.QWidget):
     
     def state_machine_function(self):
         """Execute current state"""
-        print("DEBUG: state_machine_function called!")
-        print("current state: " + str(self.currState))
-        sys.stdout.flush()
+        # print("DEBUG: state_machine_function called!")
+        # print("current state: " + str(self.currState))
+        # sys.stdout.flush()
+        print(f"go to state_machine_function, current state: {self.currState}")
         self.switch(self.currState)
     
     def settings_init(self):
@@ -140,7 +144,7 @@ class MainWindow(qtw.QWidget):
         self.view.exit_button.clicked.connect(self.exit_clicked)
     
         self.view.configure_button.clicked.connect(self.open_config_dialog)
-        self.view.destroyed.connect(self.on_view_closed)
+        # self.view.destroyed.connect(self.on_view_closed)
         self.view.clear_graph_button.clicked.connect(self.clear_graph_clicked)
         self.view.closeSignal.connect(self.on_view_closed)
     
@@ -327,9 +331,21 @@ class MainWindow(qtw.QWidget):
     
     def on_view_closed(self):
         """Handle view close event"""
+        # Prevent multiple calls
+        if self.closing:
+            return
+        
+        self.closing = True
         self.save_config()
-        self.view.save_settings(self.setting_window)
-        self.view.close()
+        
+        # Check if view still exists before trying to access it
+        try:
+            if hasattr(self, 'view') and self.view is not None:
+                self.view.save_settings(self.setting_window)
+        except RuntimeError:
+            # View has already been deleted, which is normal during close
+            print("View already closed, skipping save_settings")
+        
         print("MainView closed")
     
     def starter(self):
@@ -487,8 +503,10 @@ class MainWindow(qtw.QWidget):
             self.view.close()
     
     def waiter(self):
-        """Wait state - do nothing for 10ms"""
+        """Wait state - do nothing, just return to event loop"""
         print("go to main_window waiter")
+        # Do nothing - let Qt event loop handle user interactions and timer events
+        # The state machine will be called again when user clicks buttons or timer fires
 
     
     def saver(self):
