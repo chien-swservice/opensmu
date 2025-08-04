@@ -2,14 +2,14 @@
     "IV": {
         "source_delay_ms": 50.0,
         "voltage_range": 2.0,
-        "startV": -2.0,
+        "startV": -1.0,
         "stopV": 1.0,
         "stepV": 0.1,
         "current_range": 1e-06
     },
     "RT": {
         "rt_voltage_range": 2.0,
-        "rt_voltage_set": 0.55,
+        "rt_voltage_set": 0.5,
         "rt_current_range": 1e-06,
         "rt_aperture": 1.0
     },

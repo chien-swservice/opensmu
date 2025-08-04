@@ -79,6 +79,11 @@ class MainPresenter:
     def start_clicked(self):
         """Handle start button click"""
         print("start_clicked")
+        
+        # Check SMU connection before starting
+        if not self._check_smu_connection():
+            return
+        
         self.model.set_state(self.model.state['start'])
         self._update_button_states(start_enabled=False, stop_enabled=True, exit_enabled=False)
         self.view.message('start')
@@ -95,6 +100,39 @@ class MainPresenter:
                 self.rt_get_plot()
                 # Then start the timer for subsequent measurements
                 self.timer_function(timeout)
+    
+    def _check_smu_connection(self) -> bool:
+        """Check SMU connection and show error if failed"""
+        from PyQt5.QtWidgets import QMessageBox
+        
+        smu_type = self.model.get_config()['global'].get('smu_type', 'simulation')
+        visa_name = self.model.get_config()['global']['visa_name']
+        
+        # For simulation, always allow
+        if smu_type == 'simulation':
+            return True
+        
+        # Check if VISA name is provided
+        if not visa_name or visa_name.strip() == '':
+            QMessageBox.critical(self.view, "Connection Error", 
+                               f"No VISA address configured for {smu_type}!\n\n"
+                               "Please configure a valid VISA address in the Configuration Dialog.")
+            self._update_button_states(start_enabled=True, stop_enabled=False, exit_enabled=True)
+            return False
+        
+        # Test connection
+        if not self.model.test_smu_connection():
+            QMessageBox.critical(self.view, "Connection Error", 
+                               f"Failed to connect to {smu_type} at {visa_name}!\n\n"
+                               "Please check:\n"
+                               "• Device is powered on\n"
+                               "• Device is connected\n"
+                               "• VISA address is correct\n"
+                               "• No other application is using the device")
+            self._update_button_states(start_enabled=True, stop_enabled=False, exit_enabled=True)
+            return False
+        
+        return True
     
     def stop_clicked(self):
         """Handle stop button click"""

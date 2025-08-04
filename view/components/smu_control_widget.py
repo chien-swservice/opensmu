@@ -28,6 +28,10 @@ class SMUControlWidget(qtw.QGroupBox):
         self.smu_type_combo = qtw.QComboBox()
         self.smu_type_combo.addItem('SMU Simulation', 'simulation')
         self.smu_type_combo.addItem('Keithley 2450', 'keithley2450')
+        self.smu_type_combo.addItem('Keithley 2611', 'keithley2611')
+        self.smu_type_combo.addItem('Keithley 26xxAB', 'keithley26xxab')
+        self.smu_type_combo.addItem('Keithley 24xx', 'keithley24xx')
+        self.smu_type_combo.addItem('Agilent B2900', 'agilent_b2900')
         self.smu_type_combo.setCurrentText('SMU Simulation')
         
         # Visa name
@@ -56,6 +60,14 @@ class SMUControlWidget(qtw.QGroupBox):
         self.measure_mode_combo.addItem('RT', 1)
         self.measure_mode_combo.setCurrentText('IV')
         
+        # Test connection button
+        self.test_connection_btn = qtw.QPushButton('Test Connection')
+        self.test_connection_btn.clicked.connect(self._test_connection)
+        
+        # List devices button
+        self.list_devices_btn = qtw.QPushButton('List Devices')
+        self.list_devices_btn.clicked.connect(self._list_devices)
+        
         # Layout
         self.layout.addWidget(self.smu_type_label, 0, 1)
         self.layout.addWidget(self.smu_type_combo, 0, 2, 1, 3)
@@ -67,6 +79,8 @@ class SMUControlWidget(qtw.QGroupBox):
         self.layout.addWidget(self.nplc_value, 3, 3)
         self.layout.addWidget(self.measure_mode_label, 4, 1)
         self.layout.addWidget(self.measure_mode_combo, 4, 3)
+        self.layout.addWidget(self.test_connection_btn, 5, 1, 1, 2)
+        self.layout.addWidget(self.list_devices_btn, 5, 3, 1, 2)
     
     def _populate_instruments(self):
         """Populate the instruments list with available GPIB devices"""
@@ -116,4 +130,86 @@ class SMUControlWidget(qtw.QGroupBox):
             if 'meas_mode' in config:
                 self.measure_mode_combo.setCurrentText(config['meas_mode'])
         except Exception as e:
-            print(f"Error applying config to SMU control: {e}") 
+            print(f"Error applying config to SMU control: {e}")
+    
+    def _test_connection(self):
+        """Test the current SMU connection"""
+        from PyQt5.QtWidgets import QMessageBox
+        
+        smu_type = self.smu_type_combo.currentData()
+        visa_name = self.visa_name.currentText()
+        
+        if smu_type == 'simulation':
+            QMessageBox.information(self, "Connection Test", 
+                                  "Simulation SMU - connection test passed!")
+            return
+        
+        if not visa_name or visa_name.strip() == '':
+            QMessageBox.warning(self, "Connection Test", 
+                              "No VISA address configured!\n\nPlease select a valid VISA address.")
+            return
+        
+        try:
+            # Create a temporary SMU instance for testing
+            if smu_type == 'keithley2450':
+                from devices.keithley2450 import keithley_2450
+                test_smu = keithley_2450()
+            elif smu_type == 'keithley2611':
+                from devices.keithley2611 import keithley_2611
+                test_smu = keithley_2611()
+            elif smu_type == 'keithley26xxab':
+                from devices.keithley26xxab import keithley_26xxab
+                test_smu = keithley_26xxab()
+            elif smu_type == 'keithley24xx':
+                from devices.keithley24xx import keithley_24xx
+                test_smu = keithley_24xx()
+            elif smu_type == 'agilent_b2900':
+                from devices.agilent_b2900 import agilent_b2900
+                test_smu = agilent_b2900()
+            else:
+                QMessageBox.warning(self, "Connection Test", 
+                                  f"Unknown SMU type: {smu_type}")
+                return
+            
+            # Test connection
+            test_smu.create_smu_connector(visa_name)
+            device_id = test_smu.identify_smu()
+            test_smu.close_smu()
+            
+            QMessageBox.information(self, "Connection Test", 
+                                  f"✅ Connection successful!\n\nDevice ID:\n{device_id.strip()}")
+            
+        except Exception as e:
+            error_msg = str(e)
+            if "VI_ERROR_RSRC_NFOUND" in error_msg:
+                message = f"❌ Device not found at {visa_name}\n\nPossible causes:\n• Device is not powered on\n• Device is not connected\n• VISA address is incorrect\n• GPIB/USB driver not installed"
+            elif "VI_ERROR_RSRC_BUSY" in error_msg:
+                message = f"❌ Device at {visa_name} is busy\n\nAnother application may be using the device"
+            elif "VI_ERROR_TMO" in error_msg:
+                message = f"❌ Connection timeout to {visa_name}\n\nDevice may be slow to respond or not ready"
+            else:
+                message = f"❌ Connection failed to {visa_name}\n\nError: {error_msg}"
+            
+            QMessageBox.critical(self, "Connection Test", message)
+    
+    def _list_devices(self):
+        """List all available VISA devices"""
+        from PyQt5.QtWidgets import QMessageBox
+        import pyvisa
+        
+        try:
+            rm = pyvisa.ResourceManager()
+            resources = rm.list_resources()
+            
+            if not resources:
+                QMessageBox.information(self, "Available Devices", 
+                                      "No VISA devices found.\n\nMake sure your devices are:\n• Powered on\n• Connected to the computer\n• Have proper drivers installed")
+                return
+            
+            device_list = "\n".join([f"{i+1}. {resource}" for i, resource in enumerate(resources)])
+            message = f"Found {len(resources)} VISA device(s):\n\n{device_list}"
+            
+            QMessageBox.information(self, "Available Devices", message)
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to list VISA devices:\n{str(e)}") 
