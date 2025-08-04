@@ -16,6 +16,6 @@
 - [x] divide main_window into presenter and model
 - [x] Exit button still not working
 - [x] real time view like in iv measurement
-- [] create HAL
+- [x] create HAL
 - [] extend for other real SMU:
 - [] check long time measurement in real time mode?

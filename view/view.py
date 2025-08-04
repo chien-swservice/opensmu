@@ -91,7 +91,7 @@ class View(qtw.QWidget):
     def message(self, msg):
         self.communication_text.append(msg)
     
-    def plot_rt(self, x_vals, y_vals, y_scale='linear', x_alldata=None, y_alldata=None, repeat=0):
+    def plot_rt(self, x_vals, y_vals, y_scale='linear', x_alldata=None, y_alldata=None):
         print("call plot_rt")
         """Plot real-time measurement data"""
         self.figure.clear()

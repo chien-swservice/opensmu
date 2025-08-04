@@ -8,6 +8,7 @@ import json
 import pyvisa
 from typing import Dict, Any, Optional, Tuple, List
 from devices.smu_simulation import SMUSimulation
+from devices.keithley2450 import keithley_2450
 from .measurement_data import MeasurementData
 
 
@@ -18,7 +19,7 @@ class SMUModel:
         """Initialize the SMU model"""
         self.config = self._init_default_config()
         self.data = MeasurementData()
-        self.SMU = SMUSimulation()
+        self.SMU = self._create_smu_instance()
         self.started = False
         self.last_meas_mode = self.config['global']['meas_mode']
         
@@ -60,6 +61,7 @@ class SMUModel:
                 'rt_aperture': 1.0
             },
             'global': {
+                'smu_type': 'simulation',
                 'visa_name': 'GPIB1::1::INSTR',
                 'terminal': 'FRONT',
                 'nplc': 1.0,
@@ -70,12 +72,24 @@ class SMUModel:
             }
         }
     
+    def _create_smu_instance(self):
+        """Create SMU instance based on configuration"""
+        smu_type = self.config['global'].get('smu_type', 'simulation')
+        if smu_type == 'keithley2450':
+            return keithley_2450()
+        else:
+            return SMUSimulation()
+    
     def load_config(self) -> bool:
         """Load configuration from file"""
         try:
             with open('config/config.json', 'r') as f:
                 self.config = json.load(f)
                 print("Configuration loaded from config/config.json")
+                
+                # Recreate SMU instance based on loaded config
+                self.SMU = self._create_smu_instance()
+                
                 return True
         except FileNotFoundError:
             print("config/config.json not found. Using default configuration.")
@@ -97,9 +111,18 @@ class SMUModel:
     
     def update_config(self, new_config: Dict[str, Any]) -> None:
         """Update configuration"""
+        old_smu_type = self.config['global'].get('smu_type', 'simulation')
+        
         self.config['IV'].update(new_config['IV'])
         self.config['RT'].update(new_config['RT'])
         self.config['global'].update(new_config['global'])
+        
+        # Check if SMU type changed and recreate SMU instance if needed
+        new_smu_type = self.config['global'].get('smu_type', 'simulation')
+        if old_smu_type != new_smu_type:
+            self.SMU = self._create_smu_instance()
+            print(f"SMU type changed from {old_smu_type} to {new_smu_type}")
+        
         self.save_config()
     
     # State machine methods

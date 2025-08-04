@@ -29,6 +29,7 @@ class MainPresenter:
         # Setup
         self._setup_view()
         self._connect_signals()
+        # load saved data in config.json to the model
         self._load_initial_data()
         
         # Show view
@@ -128,6 +129,7 @@ class MainPresenter:
         dialog = ConfigDialog(self.model.get_config(), parent=self.view)
         if dialog.exec_():
             updated_config = dialog.get_config()
+            # update the model and create a new SMU instance if needed
             self.model.update_config(updated_config)
             print("[Presenter] Config updated:", self.model.get_config())
     
