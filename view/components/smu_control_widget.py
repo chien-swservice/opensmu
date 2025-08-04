@@ -23,6 +23,13 @@ class SMUControlWidget(qtw.QGroupBox):
         self.layout = qtw.QGridLayout()
         self.setLayout(self.layout)
         
+        # SMU Type selection
+        self.smu_type_label = qtw.QLabel('SMU Type')
+        self.smu_type_combo = qtw.QComboBox()
+        self.smu_type_combo.addItem('SMU Simulation', 'simulation')
+        self.smu_type_combo.addItem('Keithley 2450', 'keithley2450')
+        self.smu_type_combo.setCurrentText('SMU Simulation')
+        
         # Visa name
         self.visa_label = qtw.QLabel('Visa name')
         self.visa_name = qtw.QComboBox()
@@ -50,6 +57,8 @@ class SMUControlWidget(qtw.QGroupBox):
         self.measure_mode_combo.setCurrentText('IV')
         
         # Layout
+        self.layout.addWidget(self.smu_type_label, 0, 1)
+        self.layout.addWidget(self.smu_type_combo, 0, 2, 1, 3)
         self.layout.addWidget(self.visa_label, 1, 1)
         self.layout.addWidget(self.visa_name, 1, 2, 1, 3)
         self.layout.addWidget(self.terminal_label, 2, 1)
@@ -74,6 +83,7 @@ class SMUControlWidget(qtw.QGroupBox):
     def get_config(self):
         """Get the current configuration from the widget"""
         return {
+            'smu_type': self.smu_type_combo.currentData(),
             'visa_name': self.visa_name.currentText(),
             'terminal': self.terminal_value.currentData(),
             'nplc': float(self.nplc_value.currentData()),
@@ -83,6 +93,12 @@ class SMUControlWidget(qtw.QGroupBox):
     def apply_config(self, config):
         """Apply configuration to the widget"""
         try:
+            if 'smu_type' in config:
+                smu_type_value = config['smu_type']
+                for i in range(self.smu_type_combo.count()):
+                    if self.smu_type_combo.itemData(i) == smu_type_value:
+                        self.smu_type_combo.setCurrentIndex(i)
+                        break
             if 'visa_name' in config:
                 self.visa_name.setCurrentText(config['visa_name'])
             if 'terminal' in config:
