@@ -107,6 +107,7 @@ class keithley_2450:
         self.Keithley.write('OUTP OFF')
     '''tested'''
     '''readout from keithley'''
+    # return current in A float
     def readout(self):
         self.Keithley.write(":READ?")
         return float(self.Keithley.read())

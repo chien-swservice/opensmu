@@ -26,3 +26,10 @@
 - [x] add comprehensive error handling for SMU connections
 - [] integration a database
 - [] check long time measurement in real time mode?
+
+# Tested devices:
+- [x] Keithley Model 2611, 1109966, 1.4.2
+  - ✅ Voltage range functionality updated based on Keithley Series 2600 Reference Manual
+  - ✅ TSP (Test Script Processor) commands implemented
+  - ✅ Auto-range and manual range setting tested
+  - ✅ Comprehensive test suite added
