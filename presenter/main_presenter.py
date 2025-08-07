@@ -96,9 +96,7 @@ class MainPresenter:
         elif self.model.get_config()['global']['meas_mode'] == 'RT':
             timeout = self.model.rt_starter()
             if timeout:
-                # For RT mode, take first measurement immediately at time 0
-                self.rt_get_plot()
-                # Then start the timer for subsequent measurements
+                # Start the timer for RT measurements (no immediate first measurement)
                 self.timer_function(timeout)
     
     def _check_smu_connection(self) -> bool:

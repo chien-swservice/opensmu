@@ -496,7 +496,7 @@ class SMUModel:
         # Reset current data for new measurement run
         self.data.reset_for_new_measurement()
         
-        # Set start time AFTER SMU setup but BEFORE first measurement
+        # Set start time AFTER SMU setup (first measurement will be taken by timer)
         self.data.start_time = time.time()
         
         # Calculate timeout for RT measurement

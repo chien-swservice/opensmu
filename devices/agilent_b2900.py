@@ -1,6 +1,7 @@
 import pyvisa
+from devices.smu_base import SMUBase
 
-class agilent_b2900:
+class agilent_b2900(SMUBase):
     def __init__(self):
         self.visaResourceName = None
         self.rm = pyvisa.ResourceManager()

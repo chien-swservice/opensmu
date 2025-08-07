@@ -29,8 +29,8 @@ class SMUControlWidget(qtw.QGroupBox):
         self.smu_type_combo.addItem('SMU Simulation', 'simulation')
         self.smu_type_combo.addItem('Keithley 2450', 'keithley2450')
         self.smu_type_combo.addItem('Keithley 2611', 'keithley2611')
-        self.smu_type_combo.addItem('Keithley 26xxAB', 'keithley26xxab')
-        self.smu_type_combo.addItem('Keithley 24xx', 'keithley24xx')
+        self.smu_type_combo.addItem('Keithley 2600', 'keithley26xxab')
+        self.smu_type_combo.addItem('Keithley 2400', 'keithley24xx')
         self.smu_type_combo.addItem('Agilent B2900', 'agilent_b2900')
         self.smu_type_combo.setCurrentText('SMU Simulation')
         
