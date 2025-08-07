@@ -12,7 +12,7 @@ from devices.keithley2450 import keithley_2450
 from devices.keithley2611 import keithley_2611
 from devices.keithley26xxab import keithley_26xxab
 from devices.keithley24xx import keithley_24xx
-from devices.agilent_b2900 import agilent_b2900
+from devices.keysightB2900 import keysight_b2900
 from .measurement_data import MeasurementData
 
 
@@ -88,7 +88,7 @@ class SMUModel:
         elif smu_type == 'keithley24xx':
             return keithley_24xx()
         elif smu_type == 'agilent_b2900':
-            return agilent_b2900()
+            return keysight_b2900()
         else:
             return SMUSimulation()
     

@@ -14,7 +14,7 @@
         "rt_aperture": 0.5
     },
     "global": {
-        "smu_type": "keithley2611",
+        "smu_type": "simulation",
         "visa_name": "GPIB0::24::INSTR",
         "terminal": "FRON",
         "nplc": 1.0,

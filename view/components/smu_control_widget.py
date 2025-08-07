@@ -31,7 +31,7 @@ class SMUControlWidget(qtw.QGroupBox):
         self.smu_type_combo.addItem('Keithley 2611', 'keithley2611')
         self.smu_type_combo.addItem('Keithley 2600', 'keithley26xxab')
         self.smu_type_combo.addItem('Keithley 2400', 'keithley24xx')
-        self.smu_type_combo.addItem('Agilent B2900', 'agilent_b2900')
+        self.smu_type_combo.addItem('Keysight B2900', 'agilent_b2900')
         self.smu_type_combo.setCurrentText('SMU Simulation')
         
         # Visa name
@@ -164,8 +164,8 @@ class SMUControlWidget(qtw.QGroupBox):
                 from devices.keithley24xx import keithley_24xx
                 test_smu = keithley_24xx()
             elif smu_type == 'agilent_b2900':
-                from devices.agilent_b2900 import agilent_b2900
-                test_smu = agilent_b2900()
+                from devices.keysightB2900 import keysight_b2900
+                test_smu = keysight_b2900()
             else:
                 QMessageBox.warning(self, "Connection Test", 
                                   f"Unknown SMU type: {smu_type}")
