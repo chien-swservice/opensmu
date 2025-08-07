@@ -18,11 +18,11 @@
 - [x] real time view like in iv measurement
 - [x] create HAL
 - [x] extend for other real SMU: Ke24xx, Ke2450, AgilentB2900, Ke26xxAB, Ke2611L
--   [x] Keithley 2611
--   [x] Keithley 26xxAB
+-   [x] Keithley 2611 
+-   [x] Keithley 26xxAB suppose to work for firmware 3.x.x
 -   [x] Keithley 24xx
 -   [x] Agilent B2900
-- [] test real Keithley 2611
+- [] test real Keithley 2611 firmware version 1.4.2
 - [x] add comprehensive error handling for SMU connections
 - [] integration a database
 - [] check long time measurement in real time mode?
