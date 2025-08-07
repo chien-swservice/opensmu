@@ -1,6 +1,7 @@
-import pyvisa
+from devices.smu_base import SMUBase
+import pyvisa   
 
-class keithley_26xxab:
+class keithley_26xxab(SMUBase):
     def __init__(self):
         self.visaResourceName = None
         self.rm = pyvisa.ResourceManager()

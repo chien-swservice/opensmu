@@ -18,7 +18,7 @@
         "visa_name": "GPIB0::24::INSTR",
         "terminal": "FRON",
         "nplc": 1.0,
-        "meas_mode": "RT",
+        "meas_mode": "IV",
         "save_folder": "C:\\ChiensWork\\smu_realtimeRefactor\\smu\\data",
         "file_name": "data",
         "y_scale": "linear"
