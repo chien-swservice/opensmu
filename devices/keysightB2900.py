@@ -1,3 +1,9 @@
+"""
+Keysight B2900 Series SMU driver.
+
+NOTE: This driver has NOT been tested on real hardware.
+      It is included for future validation. Use with caution.
+"""
 import pyvisa
 from devices.smu_base import SMUBase
 

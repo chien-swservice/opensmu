@@ -5,6 +5,7 @@ import time
 import os
 import datetime
 import json
+from pathlib import Path
 import pyvisa
 from typing import Dict, Any, Optional, Tuple, List
 from devices.smu_simulation import SMUSimulation
@@ -70,7 +71,7 @@ class SMUModel:
                 'terminal': 'FRONT',
                 'nplc': 1.0,
                 'meas_mode': 'IV',
-                'save_folder': os.path.join(os.getcwd(), 'data'),
+                'save_folder': str(Path.home() / 'opensmu_data'),
                 'file_name': 'data',
                 'y_scale': 'linear'              
             }
@@ -144,7 +145,6 @@ class SMUModel:
     
     def state_machine_function(self) -> None:
         """Execute current state"""
-        print(f"go to state_machine_function, current state: {self.currState}")
         self.switch(self.currState)
     
     def initializer(self) -> None:
@@ -153,7 +153,7 @@ class SMUModel:
     
     def waiter(self) -> None:
         """Wait state - do nothing, just return"""
-        print("go to main_window waiter")
+        pass
     
     def starter(self) -> None:
         """Start measurement process"""
@@ -371,10 +371,11 @@ class SMUModel:
         self.data.filepath = os.path.join(self.config['global']['save_folder'], file_name)
         
         try:
+            os.makedirs(self.config['global']['save_folder'], exist_ok=True)
             self.data.file_handle = open(self.data.filepath, "w")
             return True
-        except OSError:
-            print('Cannot open/create file in the location')
+        except OSError as e:
+            print(f'Cannot open/create file: {e}')
             self.started = False
             return False
     
@@ -509,7 +510,6 @@ class SMUModel:
     
     def rt_get_plot(self) -> Tuple[List[float], List[float]]:
         """Handle RT measurement plotting - returns (x_vals, y_vals)"""
-        print("go to main_window rt_get_plot")
         try:
             current = self.SMU.readout()
             current_time = time.time() - self.data.start_time

@@ -1,4 +1,9 @@
 venv/
+.venv/
+.claude/
 data/
+__pycache__/
+*.pyc
+.pytest_cache/
 *.h5
 *.pt

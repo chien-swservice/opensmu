@@ -4,7 +4,6 @@ from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
-import pyvisa
 import os
 
 class View(qtw.QWidget):
@@ -92,7 +91,6 @@ class View(qtw.QWidget):
         self.communication_text.append(msg)
     
     def plot_rt(self, x_vals, y_vals, y_scale='linear', x_alldata=None, y_alldata=None):
-        print("call plot_rt")
         """Plot real-time measurement data"""
         self.figure.clear()
         ax = self.figure.add_subplot(111)

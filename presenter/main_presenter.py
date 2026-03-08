@@ -200,7 +200,6 @@ class MainPresenter:
     
     def timeOutEvent(self):
         """Handle timer timeout event"""
-        print("go to main_window timeOutEvent")
         if self.model.get_config()['global']['meas_mode'] == 'IV':
             self.iv_get_plot()
         elif self.model.get_config()['global']['meas_mode'] == 'RT':
