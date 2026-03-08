@@ -91,16 +91,29 @@ This installs all required libraries (PyQt5, pyvisa, matplotlib, numpy, pytest).
 
 ---
 
-### Step 6 — Run the Program
+### Step 6 — Activate the Virtual Environment
+
+You need to activate the virtual environment each time you open a new terminal.
 
 **Windows:**
 ```
-.venv\Scripts\python run.py
+.venv\Scripts\activate
 ```
 
 **macOS / Linux:**
 ```
-.venv/bin/python run.py
+source .venv/bin/activate
+```
+
+Your terminal prompt will change to show `(.venv)` — this means the environment is active.
+
+---
+
+### Step 7 — Run the Program
+
+With the virtual environment active, simply run:
+```
+python run.py
 ```
 
 The application window will open. By default it starts in **Simulation mode** — no hardware required.
