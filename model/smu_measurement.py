@@ -97,94 +97,90 @@ class SMUMeasurementMixin:
             print(f"❌ Connection test failed: {e}")
             return False
 
+    # --- Private helpers ---
+
+    def _smu_warn(self, fn, success_msg: str, warning_msg: str, *args) -> None:
+        """Call an SMU command, print a warning on failure but continue."""
+        try:
+            fn(*args)
+            print(success_msg)
+        except Exception as e:
+            print(f"⚠️  Warning: {warning_msg}: {e}")
+
+    def _smu_cmd(self, fn, success_msg: str, error_msg: str, *args) -> None:
+        """Call an SMU command, print an error and re-raise on failure."""
+        try:
+            fn(*args)
+            print(success_msg)
+        except Exception as e:
+            print(f"❌ ERROR: {error_msg}: {e}")
+            raise
+
     # --- SMU configuration ---
 
     def _configure_smu_basic(self) -> None:
         """Reset SMU, set timeout and terminal."""
-        smu_label = self.config['global'].get('smu_type', 'simulation').upper()
+        lbl = self.config['global'].get('smu_type', 'simulation').upper()
 
-        try:
-            self.SMU.reset_smu()
-            print(f"[{smu_label}] Reset")
-        except Exception as e:
-            print(f"⚠️  Warning: SMU reset failed: {e}")
-
-        try:
-            self.SMU.timeout_smu(25000)
-            print(f"[{smu_label}] Timeout set to 25000s")
-        except Exception as e:
-            print(f"⚠️  Warning: Timeout setting failed: {e}")
+        self._smu_warn(self.SMU.reset_smu,
+                       f"[{lbl}] Reset", "SMU reset failed")
+        self._smu_warn(self.SMU.timeout_smu,
+                       f"[{lbl}] Timeout set to 25000s", "Timeout setting failed",
+                       25000)
 
         try:
             if self.config['global']['terminal'] == 'FRONT':
                 self.SMU.set_front_terminal()
-                print(f"[{smu_label}] Using front terminal")
+                print(f"[{lbl}] Using front terminal")
             elif self.config['global']['terminal'] == 'REAR':
                 self.SMU.set_rear_terminal()
-                print(f"[{smu_label}] Using rear terminal")
+                print(f"[{lbl}] Using rear terminal")
         except Exception as e:
             print(f"⚠️  Warning: Terminal setting failed: {e}")
 
     def _configure_voltage_source(self, voltage_range: float, voltage_level: float) -> None:
         """Set source function, voltage range and initial voltage level."""
-        smu_label = self.config['global'].get('smu_type', 'simulation').upper()
+        lbl = self.config['global'].get('smu_type', 'simulation').upper()
 
-        try:
-            self.SMU.set_source_function_voltage()
-            print(f"[{smu_label}] Source function set to voltage")
-        except Exception as e:
-            print(f"❌ ERROR: Failed to set source function to voltage: {e}")
-            raise
+        self._smu_cmd(self.SMU.set_source_function_voltage,
+                      f"[{lbl}] Source function set to voltage",
+                      "Failed to set source function to voltage")
 
-        try:
-            if voltage_range == 0:
-                self.SMU.set_voltage_range_auto_on()
-                print(f"[{smu_label}] Voltage range: auto")
-            else:
-                self.SMU.set_voltage_range_value(voltage_range)
-                print(f"[{smu_label}] Voltage range: {voltage_range} V")
-        except Exception as e:
-            print(f"❌ ERROR: Failed to set voltage range: {e}")
-            raise
+        if voltage_range == 0:
+            self._smu_cmd(self.SMU.set_voltage_range_auto_on,
+                          f"[{lbl}] Voltage range: auto",
+                          "Failed to set voltage range to auto")
+        else:
+            self._smu_cmd(self.SMU.set_voltage_range_value,
+                          f"[{lbl}] Voltage range: {voltage_range} V",
+                          "Failed to set voltage range",
+                          voltage_range)
 
-        try:
-            self.SMU.set_voltage_level(voltage_level)
-            print(f"[{smu_label}] Voltage level: {voltage_level} V")
-        except Exception as e:
-            print(f"❌ ERROR: Failed to set voltage level: {e}")
-            raise
+        self._smu_cmd(self.SMU.set_voltage_level,
+                      f"[{lbl}] Voltage level: {voltage_level} V",
+                      "Failed to set voltage level",
+                      voltage_level)
 
     def _configure_current_measurement(self, current_range: float) -> None:
         """Set measure mode, current range, limit and NPLC."""
-        smu_label = self.config['global'].get('smu_type', 'simulation').upper()
+        lbl = self.config['global'].get('smu_type', 'simulation').upper()
+        nplc = self.config['global']['nplc']
 
-        try:
-            self.SMU.set_measure_mode_current()
-            print(f"[{smu_label}] Measure mode: current")
-        except Exception as e:
-            print(f"❌ ERROR: Failed to set measure mode to current: {e}")
-            raise
-
-        try:
-            self.SMU.set_measure_current_range(current_range)
-            print(f"[{smu_label}] Current range: {current_range} A")
-        except Exception as e:
-            print(f"❌ ERROR: Failed to set current range: {e}")
-            raise
-
-        try:
-            self.SMU.set_measure_current_limit(current_range)
-            print(f"[{smu_label}] Current limit: {current_range} A")
-        except Exception as e:
-            print(f"❌ ERROR: Failed to set current limit: {e}")
-            raise
-
-        try:
-            self.SMU.set_measure_current_nplc(self.config['global']['nplc'])
-            print(f"[{smu_label}] NPLC: {self.config['global']['nplc']}")
-        except Exception as e:
-            print(f"❌ ERROR: Failed to set NPLC: {e}")
-            raise
+        self._smu_cmd(self.SMU.set_measure_mode_current,
+                      f"[{lbl}] Measure mode: current",
+                      "Failed to set measure mode to current")
+        self._smu_cmd(self.SMU.set_measure_current_range,
+                      f"[{lbl}] Current range: {current_range} A",
+                      "Failed to set current range",
+                      current_range)
+        self._smu_cmd(self.SMU.set_measure_current_limit,
+                      f"[{lbl}] Current limit: {current_range} A",
+                      "Failed to set current limit",
+                      current_range)
+        self._smu_cmd(self.SMU.set_measure_current_nplc,
+                      f"[{lbl}] NPLC: {nplc}",
+                      "Failed to set NPLC",
+                      nplc)
 
     # --- File ---
 
