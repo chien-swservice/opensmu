@@ -1,6 +1,6 @@
 """Tests for MVP architecture — model and component imports."""
 import pytest
-from model.smu_model import SMUModel
+from model.smu_model import SMUModel, SMUState
 from model.measurement_data import MeasurementData
 
 
@@ -34,7 +34,7 @@ def test_model_default_smu_type_is_simulation():
 
 def test_model_initial_state_is_initialize():
     model = SMUModel()
-    assert model.currState == model.state['initialize']
+    assert model.currState == SMUState.INITIALIZE
 
 
 def test_presenter_can_be_imported():

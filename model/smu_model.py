@@ -5,6 +5,7 @@ import time
 import os
 import datetime
 import json
+from enum import Enum, auto
 from pathlib import Path
 import pyvisa
 from typing import Dict, Any, Optional, Tuple, List
@@ -15,6 +16,16 @@ from devices.keithley26xxab import keithley_26xxab
 from devices.keithley24xx import keithley_24xx
 from devices.keysightB2900 import keysight_b2900
 from .measurement_data import MeasurementData
+
+
+class SMUState(Enum):
+    """States for the SMU hierarchical state machine."""
+    INITIALIZE = auto()
+    WAIT_FOR_EVENT = auto()
+    START = auto()
+    STOP = auto()
+    EXIT = auto()
+    SAVE_DATA = auto()
 
 
 class SMUModel:
@@ -29,23 +40,15 @@ class SMUModel:
         self.last_meas_mode = self.config['global']['meas_mode']
         
         # State machine
-        self.state = {
-            'initialize': 0,
-            'wait_for_event': 1,
-            'start': 2,
-            'stop': 3,
-            'exit': 4,
-            'save_data': 5
-        }
-        self.currState = self.state['initialize']
-        
+        self.currState = SMUState.INITIALIZE
+
         self.switcher = {
-            self.state['initialize']: self.initializer,
-            self.state['start']: self.starter,
-            self.state['stop']: self.stoper,
-            self.state['exit']: self.exiter,
-            self.state['wait_for_event']: self.waiter,
-            self.state['save_data']: self.saver
+            SMUState.INITIALIZE: self.initializer,
+            SMUState.START: self.starter,
+            SMUState.STOP: self.stoper,
+            SMUState.EXIT: self.exiter,
+            SMUState.WAIT_FOR_EVENT: self.waiter,
+            SMUState.SAVE_DATA: self.saver
         }
     
     def _init_default_config(self) -> Dict[str, Any]:
@@ -149,8 +152,8 @@ class SMUModel:
     
     def initializer(self) -> None:
         """Initialize state"""
-        self.currState = self.state['wait_for_event']
-    
+        self.currState = SMUState.WAIT_FOR_EVENT
+
     def waiter(self) -> None:
         """Wait state - do nothing, just return"""
         pass
@@ -195,13 +198,13 @@ class SMUModel:
         self.data.save_current_data()
         
         # Return to wait state
-        self.currState = self.state['wait_for_event']
-    
+        self.currState = SMUState.WAIT_FOR_EVENT
+
     def exiter(self) -> None:
         """Exit application"""
         print('exit')
         if self.started:
-            self.currState = self.state['stop']
+            self.currState = SMUState.STOP
         # Don't call state_machine_function() here - let the presenter handle the exit
     
     def saver(self) -> None:
@@ -209,8 +212,8 @@ class SMUModel:
         if self.data.file_handle and not self.data.file_handle.closed:
             self.data.file_handle.close()
         
-        self.currState = self.state['stop']
-    
+        self.currState = SMUState.STOP
+
     def default(self) -> None:
         """Default state handler"""
         print("Unknown state")
@@ -235,7 +238,7 @@ class SMUModel:
         if not visa_name or visa_name.strip() == '':
             print(f"❌ ERROR: No VISA address provided for {smu_type}")
             print("   Please configure a valid VISA address in the Configuration Dialog")
-            self.currState = self.state['wait_for_event']
+            self.currState = SMUState.WAIT_FOR_EVENT
             return False
         
         try:
@@ -273,13 +276,13 @@ class SMUModel:
                 print(f"❌ ERROR: Connection failed to {visa_name}")
                 print(f"   Error: {error_msg}")
             
-            self.currState = self.state['wait_for_event']
+            self.currState = SMUState.WAIT_FOR_EVENT
             return False
             
         except Exception as e:
             print(f"❌ ERROR: Unexpected error connecting to {visa_name}")
             print(f"   Error: {e}")
-            self.currState = self.state['wait_for_event']
+            self.currState = SMUState.WAIT_FOR_EVENT
             return False
     
     def _configure_smu_basic(self) -> None:
@@ -427,7 +430,7 @@ class SMUModel:
         timeout = int(round(self.config['global']['nplc'] * 16.67) + self.config['IV']['source_delay_ms'] + 50)
         
         # Start measurement
-        self.currState = self.state['wait_for_event']
+        self.currState = SMUState.WAIT_FOR_EVENT
         self.state_machine_function()
         
         return timeout
@@ -452,9 +455,9 @@ class SMUModel:
             # Continue measurement if not finished
             if self.data.index >= len(self.data.listV):
                 # Measurement complete
-                self.currState = self.state['save_data']
+                self.currState = SMUState.SAVE_DATA
         else:
-            self.currState = self.state['save_data']
+            self.currState = SMUState.SAVE_DATA
         
         return self.data.x_vals, self.data.y_vals
     
@@ -503,7 +506,7 @@ class SMUModel:
         # Calculate timeout for RT measurement
         timeout = int(round(self.config['RT']['rt_aperture'] * 1000))
         
-        self.currState = self.state['wait_for_event']
+        self.currState = SMUState.WAIT_FOR_EVENT
         self.state_machine_function()
         
         return timeout
@@ -541,11 +544,11 @@ class SMUModel:
         """Check if measurement is started"""
         return self.started
     
-    def get_current_state(self) -> int:
+    def get_current_state(self) -> SMUState:
         """Get current state"""
         return self.currState
-    
-    def set_state(self, state: int) -> None:
+
+    def set_state(self, state: SMUState) -> None:
         """Set current state"""
         self.currState = state
         self.state_machine_function()
