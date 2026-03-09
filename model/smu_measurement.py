@@ -253,7 +253,7 @@ class SMUMeasurementMixin:
 
         return timeout
 
-    def iv_get_plot(self) -> Tuple[List[float], List[float]]:
+    def iv_collect_data(self) -> Tuple[List[float], List[float]]:
         """Collect one IV data point per timer tick."""
         if self.data.index < len(self.data.listV):
             voltage = self.data.listV[self.data.index]
@@ -320,7 +320,7 @@ class SMUMeasurementMixin:
 
         return timeout
 
-    def rt_get_plot(self) -> Tuple[List[float], List[float]]:
+    def rt_collect_data(self) -> Tuple[List[float], List[float]]:
         """Collect one RT data point per timer tick."""
         try:
             current = self.SMU.readout()

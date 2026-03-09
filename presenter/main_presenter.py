@@ -200,13 +200,13 @@ class MainPresenter:
     def timeOutEvent(self):
         """Handle timer timeout event"""
         if self.model.get_config()['global']['meas_mode'] == 'IV':
-            self.iv_get_plot()
+            self.iv_collect_data()
         elif self.model.get_config()['global']['meas_mode'] == 'RT':
-            self.rt_get_plot()
+            self.rt_collect_data()
     
-    def iv_get_plot(self):
+    def iv_collect_data(self):
         """Handle IV measurement plotting"""
-        x_vals, y_vals = self.model.iv_get_plot()
+        x_vals, y_vals = self.model.iv_collect_data()
         
         # Update view
         self.view.plot_iv(
@@ -228,9 +228,9 @@ class MainPresenter:
             self.model.set_state(SMUState.SAVE_DATA)
             self.stop_clicked()
     
-    def rt_get_plot(self):
+    def rt_collect_data(self):
         """Handle RT measurement plotting"""
-        x_vals, y_vals = self.model.rt_get_plot()
+        x_vals, y_vals = self.model.rt_collect_data()
         
         # Update view
         self.view.plot_rt(
