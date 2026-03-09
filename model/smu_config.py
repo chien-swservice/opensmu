@@ -4,13 +4,6 @@ from pathlib import Path
 from typing import Dict, Any, List
 import pyvisa
 
-from devices.smu_simulation import SMUSimulation
-from devices.keithley2450 import keithley_2450
-from devices.keithley2611 import keithley_2611
-from devices.keithley26xxab import keithley_26xxab
-from devices.keithley24xx import keithley_24xx
-from devices.keysightB2900 import keysight_b2900
-
 
 class SMUConfigMixin:
     """Mixin providing configuration management and SMU device factory."""
@@ -45,16 +38,27 @@ class SMUConfigMixin:
         }
 
     def _create_smu_instance(self):
-        """Instantiate the correct SMU driver based on config."""
+        """Instantiate the correct SMU driver based on config (lazy imports)."""
         smu_type = self.config['global'].get('smu_type', 'simulation')
-        drivers = {
-            'keithley2450': keithley_2450,
-            'keithley2611': keithley_2611,
-            'keithley26xxab': keithley_26xxab,
-            'keithley24xx': keithley_24xx,
-            'agilent_b2900': keysight_b2900,
-        }
-        return drivers.get(smu_type, SMUSimulation)()
+
+        if smu_type == 'keithley2450':
+            from devices.keithley2450 import keithley_2450
+            return keithley_2450()
+        elif smu_type == 'keithley2611':
+            from devices.keithley2611 import keithley_2611
+            return keithley_2611()
+        elif smu_type == 'keithley26xxab':
+            from devices.keithley26xxab import keithley_26xxab
+            return keithley_26xxab()
+        elif smu_type == 'keithley24xx':
+            from devices.keithley24xx import keithley_24xx
+            return keithley_24xx()
+        elif smu_type == 'agilent_b2900':
+            from devices.keysightB2900 import keysight_b2900
+            return keysight_b2900()
+        else:
+            from devices.smu_simulation import SMUSimulation
+            return SMUSimulation()
 
     def load_config(self) -> bool:
         """Load configuration from config/config.json."""
