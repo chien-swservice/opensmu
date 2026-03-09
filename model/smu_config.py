@@ -4,6 +4,8 @@ from pathlib import Path
 from typing import Dict, Any, List
 import pyvisa
 
+CONFIG_PATH = Path(__file__).parent.parent / 'config' / 'config.json'
+
 
 class SMUConfigMixin:
     """Mixin providing configuration management and SMU device factory."""
@@ -63,27 +65,27 @@ class SMUConfigMixin:
     def load_config(self) -> bool:
         """Load configuration from config/config.json."""
         try:
-            with open('config/config.json', 'r') as f:
+            with open(CONFIG_PATH, 'r') as f:
                 self.config = json.load(f)
-            print("Configuration loaded from config/config.json")
+            print(f"Configuration loaded from {CONFIG_PATH}")
             self.SMU = self._create_smu_instance()
             return True
         except FileNotFoundError:
-            print("config/config.json not found. Using default configuration.")
+            print(f"{CONFIG_PATH} not found. Using default configuration.")
             return False
         except json.JSONDecodeError:
-            print("Error decoding config/config.json. Using default configuration.")
+            print(f"Error decoding {CONFIG_PATH}. Using default configuration.")
             return False
 
     def save_config(self) -> bool:
         """Save current configuration to config/config.json."""
         try:
-            with open('config/config.json', 'w') as f:
+            with open(CONFIG_PATH, 'w') as f:
                 json.dump(self.config, f, indent=4)
-            print("Configuration saved to config/config.json")
+            print(f"Configuration saved to {CONFIG_PATH}")
             return True
         except Exception as e:
-            print(f"Error saving config/config.json: {e}")
+            print(f"Error saving {CONFIG_PATH}: {e}")
             return False
 
     def update_config(self, new_config: Dict[str, Any]) -> None:
