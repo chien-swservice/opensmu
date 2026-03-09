@@ -129,34 +129,62 @@ class SMUMeasurementMixin:
         """Set source function, voltage range and initial voltage level."""
         smu_label = self.config['global'].get('smu_type', 'simulation').upper()
 
-        self.SMU.set_source_function_voltage()
-        print(f"[{smu_label}] Source function set to voltage")
+        try:
+            self.SMU.set_source_function_voltage()
+            print(f"[{smu_label}] Source function set to voltage")
+        except Exception as e:
+            print(f"❌ ERROR: Failed to set source function to voltage: {e}")
+            raise
 
-        if voltage_range == 0:
-            self.SMU.set_voltage_range_auto_on()
-            print(f"[{smu_label}] Voltage range: auto")
-        else:
-            self.SMU.set_voltage_range_value(voltage_range)
-            print(f"[{smu_label}] Voltage range: {voltage_range} V")
+        try:
+            if voltage_range == 0:
+                self.SMU.set_voltage_range_auto_on()
+                print(f"[{smu_label}] Voltage range: auto")
+            else:
+                self.SMU.set_voltage_range_value(voltage_range)
+                print(f"[{smu_label}] Voltage range: {voltage_range} V")
+        except Exception as e:
+            print(f"❌ ERROR: Failed to set voltage range: {e}")
+            raise
 
-        self.SMU.set_voltage_level(voltage_level)
-        print(f"[{smu_label}] Voltage level: {voltage_level} V")
+        try:
+            self.SMU.set_voltage_level(voltage_level)
+            print(f"[{smu_label}] Voltage level: {voltage_level} V")
+        except Exception as e:
+            print(f"❌ ERROR: Failed to set voltage level: {e}")
+            raise
 
     def _configure_current_measurement(self, current_range: float) -> None:
         """Set measure mode, current range, limit and NPLC."""
         smu_label = self.config['global'].get('smu_type', 'simulation').upper()
 
-        self.SMU.set_measure_mode_current()
-        print(f"[{smu_label}] Measure mode: current")
+        try:
+            self.SMU.set_measure_mode_current()
+            print(f"[{smu_label}] Measure mode: current")
+        except Exception as e:
+            print(f"❌ ERROR: Failed to set measure mode to current: {e}")
+            raise
 
-        self.SMU.set_measure_current_range(current_range)
-        print(f"[{smu_label}] Current range: {current_range} A")
+        try:
+            self.SMU.set_measure_current_range(current_range)
+            print(f"[{smu_label}] Current range: {current_range} A")
+        except Exception as e:
+            print(f"❌ ERROR: Failed to set current range: {e}")
+            raise
 
-        self.SMU.set_measure_current_limit(current_range)
-        print(f"[{smu_label}] Current limit: {current_range} A")
+        try:
+            self.SMU.set_measure_current_limit(current_range)
+            print(f"[{smu_label}] Current limit: {current_range} A")
+        except Exception as e:
+            print(f"❌ ERROR: Failed to set current limit: {e}")
+            raise
 
-        self.SMU.set_measure_current_nplc(self.config['global']['nplc'])
-        print(f"[{smu_label}] NPLC: {self.config['global']['nplc']}")
+        try:
+            self.SMU.set_measure_current_nplc(self.config['global']['nplc'])
+            print(f"[{smu_label}] NPLC: {self.config['global']['nplc']}")
+        except Exception as e:
+            print(f"❌ ERROR: Failed to set NPLC: {e}")
+            raise
 
     # --- File ---
 
