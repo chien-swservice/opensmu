@@ -69,7 +69,8 @@ def test_save_and_load_roundtrip(tmp_path):
 
 
 def test_load_missing_file_returns_false(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
+    import model.smu_config as smu_config
+    monkeypatch.setattr(smu_config, 'CONFIG_PATH', tmp_path / 'nonexistent.json')
     model = SMUModel()
     result = model.load_config()
     assert result is False
