@@ -1,168 +1,216 @@
-# SMU Application - MVP Architecture Implementation
+# OpenSMU — Architecture Documentation
 
-## 🏗️ **Architecture Overview**
+## Architecture Overview
 
-The SMU (Source Measurement Unit) application has been successfully refactored from a monolithic `MainWindow` class into a clean **Model-View-Presenter (MVP)** architecture.
+The application uses **Model-View-Presenter (MVP)** combined with a **Hardware Abstraction Layer (HAL)** and a **Hierarchical State Machine**.
 
 ```
 ┌─────────────┐    ┌──────────────┐    ┌─────────────┐
 │    View     │◄──►│   Presenter  │◄──►│    Model    │
-│ (UI Only)   │    │ (Controller) │    │ (Business   │
-│             │    │              │    │  Logic)     │
-└─────────────┘    └──────────────┘    └─────────────┘
+│  (UI Only)  │    │ (Controller) │    │  (Business  │
+│             │    │              │    │   Logic)    │
+└─────────────┘    └──────────────┘    └──────┬──────┘
+                                              │
+                                    ┌─────────▼──────────┐
+                                    │   HAL (devices/)   │
+                                    │  SMUBase (abstract)│
+                                    │  SMUSimulation     │
+                                    │  keithley_2450     │
+                                    │  keithley_24xx     │
+                                    │  keithley_2611     │
+                                    │  keithley_26xxab   │
+                                    │  keysight_b2900    │
+                                    └────────────────────┘
 ```
 
-## 📁 **File Structure**
+---
+
+## File Structure
 
 ```
-smu/
+opensmu/
 ├── model/
-│   ├── __init__.py
-│   ├── smu_model.py          # Business logic
-│   └── measurement_data.py   # Data structures
+│   ├── smu_model.py          # Business logic + state machine
+│   └── measurement_data.py   # MeasurementData dataclass
 ├── presenter/
-│   ├── __init__.py
-│   └── main_presenter.py     # Controller logic
+│   └── main_presenter.py     # Event handling, timer, UI coordination
 ├── view/
-│   ├── __init__.py
-│   ├── view.py              # UI components
+│   ├── view.py               # Main window, matplotlib canvas
 │   └── components/
-├── main_window.py           # Entry point (simplified)
-└── run.py
+│       ├── config_dialog.py
+│       ├── smu_control_widget.py
+│       ├── iv_settings_widget.py
+│       ├── rt_settings_widget.py
+│       └── file_settings_widget.py
+├── devices/
+│   ├── smu_base.py           # Abstract base class (21 abstract methods)
+│   ├── smu_simulation.py     # Simulation driver (no hardware needed)
+│   ├── keithley2450.py       # SCPI
+│   ├── keithley24xx.py       # SCPI
+│   ├── keithley2611.py       # TSP
+│   ├── keithley26xxab.py     # TSP
+│   └── keysightB2900.py      # SCPI (not yet tested on hardware)
+├── test/
+│   ├── test_mvp.py
+│   ├── test_simulation_driver.py
+│   ├── test_state_machine.py
+│   ├── test_measurement_data.py
+│   ├── test_config_save_load.py
+│   ├── test_smu_selection.py
+│   └── test_view.py          # Visual launcher (not a pytest test)
+├── config/
+│   └── config.json           # Persistent configuration (auto save/load)
+├── main_window.py            # Thin entry point
+└── run.py                    # QApplication launcher
 ```
 
-## 🔧 **Component Responsibilities**
+---
 
-### **Model (`model/smu_model.py`)**
-- **Business Logic**: All SMU operations, measurement logic, state machine
-- **Data Management**: Configuration, measurement data, file operations
-- **Device Communication**: SMU connection, voltage/current control
-- **State Machine**: Application state management
-- **No UI Dependencies**: Pure business logic, can work independently
+## Component Responsibilities
 
-**Key Methods:**
-- `starter()`, `iv_starter()`, `rt_starter()` - Measurement initialization
-- `iv_get_plot()`, `rt_get_plot()` - Data collection and processing
-- `stoper()`, `saver()` - Measurement completion
-- `load_config()`, `save_config()` - Configuration management
+### Model (`model/smu_model.py`)
+- All SMU operations, measurement logic, state machine
+- Configuration load/save (`config/config.json`)
+- HAL device instantiation based on configured SMU type
+- No UI dependencies — can be used and tested independently
 
-### **Presenter (`presenter/main_presenter.py`)**
-- **Controller Logic**: Coordinates between Model and View
-- **Event Handling**: Button clicks, timer events, UI interactions
-- **Data Flow**: Passes data between Model and View
-- **Timer Management**: Handles measurement timing
-- **State Coordination**: Manages UI state based on Model state
+**Key methods:**
+- `starter()`, `iv_starter()`, `rt_starter()` — measurement initialization
+- `iv_get_plot()`, `rt_get_plot()` — data collection per timer tick
+- `stoper()`, `saver()` — measurement completion and file handling
+- `load_config()`, `save_config()`, `update_config()` — configuration management
+- `set_state(SMUState)`, `get_current_state()` — state machine interface
 
-**Key Methods:**
-- `start_clicked()`, `stop_clicked()`, `exit_clicked()` - UI event handlers
-- `timeOutEvent()`, `iv_get_plot()`, `rt_get_plot()` - Timer and measurement handling
-- `open_config_dialog()` - Configuration dialog management
+### Presenter (`presenter/main_presenter.py`)
+- Connects Model and View — neither layer knows about the other
+- Handles all button signals and routes them to the model
+- Owns the `QTimer` that drives measurements
+- Updates the view with data returned by the model
 
-### **View (`view/view.py`)**
-- **UI Components**: Buttons, plots, text displays
-- **Visual Updates**: Plot rendering, UI state updates
-- **User Input**: Captures user interactions
-- **No Business Logic**: Pure presentation layer
+**Key methods:**
+- `start_clicked()`, `stop_clicked()`, `exit_clicked()` — UI event handlers
+- `timeOutEvent()` — timer callback, calls `iv_get_plot()` or `rt_get_plot()`
+- `open_config_dialog()` — opens config dialog and applies result to model
 
-**Key Methods:**
-- `plot_iv()`, `plot_rt()` - Plot rendering
-- `message()` - Status updates
-- `clear_plot()` - Plot clearing
+### View (`view/view.py`)
+- Pure presentation — no business logic
+- Renders matplotlib plots for IV and RT measurements
+- Emits `closeSignal` on window close (presenter handles it)
 
-## 🔄 **Data Flow**
+**Key methods:**
+- `plot_iv()`, `plot_rt()` — plot current data + historical runs
+- `message()` — append status text to the communication box
+- `clear_plot()` — reset the graph
 
-### **User Interaction Flow:**
-1. **User clicks Start** → `View` emits signal
-2. **Presenter** receives signal → calls `Model.starter()`
-3. **Model** initializes measurement → returns timeout value
-4. **Presenter** starts timer → measurement begins
-5. **Timer fires** → `Presenter.timeOutEvent()` → `Model.iv_get_plot()`/`rt_get_plot()`
-6. **Model** processes data → returns updated values
-7. **Presenter** updates `View` → plot refreshes
+### HAL (`devices/`)
+- `SMUBase` defines 21 abstract methods that every driver must implement
+- Each driver translates those calls into device-specific SCPI or TSP commands
+- `SMUSimulation` implements all methods in memory (I = V/1kΩ + noise)
+- Swapping hardware requires only changing `smu_type` in config — no code change
 
-### **Configuration Flow:**
-1. **User opens Config Dialog** → `Presenter.open_config_dialog()`
-2. **User modifies settings** → `ConfigDialog.get_config()`
-3. **Presenter** updates `Model` → `Model.update_config()`
-4. **Model** saves to file → `Model.save_config()`
+---
 
-## ✅ **Benefits of MVP Architecture**
+## State Machine
 
-### **1. Separation of Concerns**
-- **Model**: Pure business logic, no UI dependencies
-- **Presenter**: Coordination logic, event handling
-- **View**: Pure presentation, no business logic
+The state machine is implemented in `SMUModel` using the `SMUState` enum.
 
-### **2. Testability**
-- **Model**: Can be tested independently without UI
-- **Presenter**: Can be tested with mocked Model and View
-- **View**: Can be tested with mocked Presenter
+### SMUState Enum
 
-### **3. Maintainability**
-- **Clear Responsibilities**: Each component has a single purpose
-- **Reduced Coupling**: Changes in one component don't affect others
-- **Easier Debugging**: Issues can be isolated to specific components
+```python
+class SMUState(Enum):
+    INITIALIZE     = auto()
+    WAIT_FOR_EVENT = auto()
+    START          = auto()
+    STOP           = auto()
+    EXIT           = auto()
+    SAVE_DATA      = auto()
+```
 
-### **4. Reusability**
-- **Model**: Can be reused with different UI frameworks
-- **Presenter**: Can be adapted for different view implementations
-- **View**: Can be replaced without affecting business logic
+Using an `Enum` instead of a plain integer dictionary provides:
+- **Type safety** — `SMUState.START` is unambiguous
+- **IDE autocomplete** — all valid states are discoverable
+- **Readability** — state comparisons are self-documenting
 
-## 🚀 **Usage**
+### State Transitions
 
-### **Running the Application:**
+```
+INITIALIZE ──► WAIT_FOR_EVENT ──► START ──► WAIT_FOR_EVENT (measurement ticking)
+                    ▲                │
+                    │                ▼
+                    └──── STOP ◄─── SAVE_DATA
+                            ▲
+                    EXIT ───┘  (if measurement was running)
+```
+
+### How the switcher works
+
+```python
+self.switcher = {
+    SMUState.INITIALIZE:     self.initializer,
+    SMUState.WAIT_FOR_EVENT: self.waiter,
+    SMUState.START:          self.starter,
+    SMUState.STOP:           self.stoper,
+    SMUState.EXIT:           self.exiter,
+    SMUState.SAVE_DATA:      self.saver,
+}
+```
+
+`set_state(state)` assigns `self.currState` and immediately calls `state_machine_function()`, which dispatches to the correct handler via the switcher.
+
+---
+
+## Data Flow
+
+### Measurement flow (IV example):
+1. User clicks **Start** → `Presenter.start_clicked()`
+2. Presenter calls `Model.set_state(SMUState.START)` → `starter()` runs
+3. Presenter calls `Model.iv_starter()` → SMU configured, returns timer interval (ms)
+4. Presenter starts `QTimer` with that interval
+5. Each timer tick → `Presenter.timeOutEvent()` → `Model.iv_get_plot()`
+6. Model sets next voltage, reads current, appends to data, returns `(x_vals, y_vals)`
+7. Presenter calls `View.plot_iv()` to update the graph
+8. When all voltage steps done, model sets `SMUState.SAVE_DATA`
+9. Presenter detects this → calls `stop_clicked()` → `Model.set_state(SMUState.STOP)`
+
+### Configuration flow:
+1. User clicks **Configuration** → `Presenter.open_config_dialog()`
+2. Dialog pre-filled from `Model.get_config()`
+3. User edits and clicks OK → `Presenter` calls `Model.update_config(new_config)`
+4. Model recreates SMU instance if `smu_type` changed, saves to `config/config.json`
+
+---
+
+## Running Tests
+
 ```bash
-python run.py
+pytest test/ -v
 ```
 
-### **Testing the Architecture:**
+Expected: **63 passed** (1 skipped if PyQt5 not available in headless environment).
+
+Test files:
+| File | Covers |
+|---|---|
+| `test_simulation_driver.py` | All 21 HAL methods on SMUSimulation |
+| `test_state_machine.py` | All state transitions using SMUState enum |
+| `test_measurement_data.py` | MeasurementData dataclass methods |
+| `test_config_save_load.py` | Config load/save/roundtrip |
+| `test_smu_selection.py` | SMU instance creation for all driver types |
+| `test_mvp.py` | Model imports, defaults, initial state |
+
+---
+
+## Dependencies
+
+| Package | Purpose |
+|---|---|
+| `PyQt5>=5.15` | GUI framework |
+| `pyvisa>=1.13` | VISA instrument communication |
+| `matplotlib>=3.7` | Real-time plotting |
+| `numpy>=1.24` | Numerical operations (matplotlib dependency) |
+| `pytest>=7.4` | Test runner |
+
+Install all with:
 ```bash
-python test_mvp.py
+pip install -r requirements.txt
 ```
-
-### **Key Features Preserved:**
-- ✅ IV and Real-Time measurements
-- ✅ Configuration management
-- ✅ Data plotting with historical curves
-- ✅ File saving
-- ✅ State machine functionality
-- ✅ Timer-based measurements
-
-## 🔧 **Migration Summary**
-
-### **What Changed:**
-1. **Monolithic MainWindow** → **Three separate components**
-2. **Mixed responsibilities** → **Clear separation of concerns**
-3. **Tight coupling** → **Loose coupling with interfaces**
-4. **Hard to test** → **Easily testable components**
-
-### **What Stayed the Same:**
-1. **All functionality** preserved
-2. **User interface** unchanged
-3. **Configuration system** maintained
-4. **Measurement capabilities** identical
-5. **File output** format unchanged
-
-## 📋 **Dependencies**
-
-The application requires the following dependencies:
-- `PyQt5` - GUI framework
-- `pyvisa` - Instrument communication
-- `matplotlib` - Plotting
-- `numpy` - Numerical operations
-
-## 🎯 **Next Steps**
-
-1. **Add Unit Tests**: Create comprehensive tests for each component
-2. **Add Integration Tests**: Test component interactions
-3. **Add Error Handling**: Improve error handling and user feedback
-4. **Add Logging**: Implement proper logging throughout the application
-5. **Add Documentation**: Document all public methods and interfaces
-
-## 📝 **Notes**
-
-- The **Model** is completely independent and can be used without the UI
-- The **Presenter** handles all coordination between Model and View
-- The **View** is purely presentational and has no business logic
-- All existing functionality has been preserved during the refactoring
-- The application maintains the same user experience while being much more maintainable 

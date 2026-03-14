@@ -1,6 +1,6 @@
 {
     "IV": {
-        "source_delay_ms": 50.0,
+        "source_delay_ms": 50,
         "voltage_range": 2.0,
         "startV": -1.0,
         "stopV": 1.0,
@@ -15,11 +15,11 @@
     },
     "global": {
         "smu_type": "simulation",
-        "visa_name": "",
-        "terminal": "FRON",
+        "visa_name": "GPIB1::1::INSTR",
+        "terminal": "FRONT",
         "nplc": 1.0,
-        "meas_mode": "RT",
-        "save_folder": "C:/Users/thanh/OneDrive/Documents/002_Research/003_Python/ClaudeCodeAIGroup/opensmu/data",
+        "meas_mode": "IV",
+        "save_folder": "C:\\Users\\thanh\\opensmu_data",
         "file_name": "data",
         "y_scale": "linear"
     }

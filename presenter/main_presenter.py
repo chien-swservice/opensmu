@@ -4,7 +4,7 @@ Main Presenter - Connects Model and View
 from PyQt5 import QtCore as qtc
 from PyQt5 import QtWidgets as qtw
 from typing import Dict, Any
-from model.smu_model import SMUModel
+from model.smu_model import SMUModel, SMUState
 from view.view import View
 from view.components.config_dialog import ConfigDialog
 
@@ -22,7 +22,8 @@ class MainPresenter:
         self.view = View()
         
         # Initialize settings and timer
-        self.setting_window = qtc.QSettings('KeithleyIV_RT', 'windows size')
+        # self.setting_window preserve the location and size of the main window
+        self.setting_window = qtc.QSettings('IV_RT', 'windows size')
         self.timer = qtc.QTimer()
         self.timer.timeout.connect(self.timeOutEvent)
         
@@ -77,14 +78,12 @@ class MainPresenter:
     
     # Event handlers
     def start_clicked(self):
-        """Handle start button click"""
-        print("start_clicked")
-        
+        """Handle start button click"""       
         # Check SMU connection before starting
         if not self._check_smu_connection():
             return
         
-        self.model.set_state(self.model.state['start'])
+        self.model.set_state(SMUState.START)
         self._update_button_states(start_enabled=False, stop_enabled=True, exit_enabled=False)
         self.view.message('start')
         
@@ -138,7 +137,7 @@ class MainPresenter:
         if self.timer.isActive():
             self.timer.stop()
         
-        self.model.set_state(self.model.state['stop'])
+        self.model.set_state(SMUState.STOP)
         self._update_button_states()
         self.view.message('stop')
     
@@ -149,7 +148,7 @@ class MainPresenter:
             self.stop_clicked()
         
         # Set exit state
-        self.model.set_state(self.model.state['exit'])
+        self.model.set_state(SMUState.EXIT)
         self.view.message('exit')
         
         # Close the application
@@ -201,13 +200,13 @@ class MainPresenter:
     def timeOutEvent(self):
         """Handle timer timeout event"""
         if self.model.get_config()['global']['meas_mode'] == 'IV':
-            self.iv_get_plot()
+            self.iv_collect_data()
         elif self.model.get_config()['global']['meas_mode'] == 'RT':
-            self.rt_get_plot()
+            self.rt_collect_data()
     
-    def iv_get_plot(self):
+    def iv_collect_data(self):
         """Handle IV measurement plotting"""
-        x_vals, y_vals = self.model.iv_get_plot()
+        x_vals, y_vals = self.model.iv_collect_data()
         
         # Update view
         self.view.plot_iv(
@@ -222,16 +221,16 @@ class MainPresenter:
             self.view.communication_text.setText(self.model.data.filepath)
         
         # Check if measurement is complete
-        if self.model.get_current_state() == self.model.state['save_data']:
+        if self.model.get_current_state() == SMUState.SAVE_DATA:
             # Measurement complete, stop timer and save data
             if self.timer.isActive():
                 self.timer.stop()
-            self.model.set_state(self.model.state['save_data'])
+            self.model.set_state(SMUState.SAVE_DATA)
             self.stop_clicked()
     
-    def rt_get_plot(self):
+    def rt_collect_data(self):
         """Handle RT measurement plotting"""
-        x_vals, y_vals = self.model.rt_get_plot()
+        x_vals, y_vals = self.model.rt_collect_data()
         
         # Update view
         self.view.plot_rt(
