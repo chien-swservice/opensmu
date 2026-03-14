@@ -1,4 +1,4 @@
-## Support
+# Support
 If this library helped you with your measurements, consider supporting the project:
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/chiennguyen123)
 
