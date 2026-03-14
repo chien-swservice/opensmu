@@ -1,3 +1,7 @@
+## Support
+If this library helped you with your measurements, consider supporting the project:
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/chiennguyen123)
+
 # OpenSMU — IV and Real-Time Current Measurement
 
 A desktop application for **IV sweep** and **real-time current measurements** using Source Measurement Units (SMUs) from Keithley and Keysight. Runs on Windows, macOS, and Linux.
