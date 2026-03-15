@@ -2,7 +2,7 @@
 # PyInstaller spec file for opensmu
 #
 # Usage (run from project root):
-#   pyinstaller installer/opensmu.spec
+#   pyinstaller installer/opensmu.spec --distpath installer/dist --workpath installer/build
 #
 # Output will be in installer/dist/opensmu/
 
@@ -11,11 +11,6 @@ from pathlib import Path
 
 # Project root is one level up from this spec file
 project_root = Path(SPECPATH).parent
-
-# Direct build and dist output into installer/ subfolder
-import PyInstaller.config
-PyInstaller.config.CONF['distpath'] = str(Path(SPECPATH) / 'dist')
-PyInstaller.config.CONF['workpath'] = str(Path(SPECPATH) / 'build')
 
 a = Analysis(
     [str(project_root / 'run.py')],
@@ -83,6 +78,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    contents_directory='.',  # Flatten: put all files next to exe (fixes DLL search on Windows)
     # icon='installer/opensmu.ico',  # Uncomment when icon is available
 )
 
