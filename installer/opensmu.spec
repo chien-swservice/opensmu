@@ -79,6 +79,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     contents_directory='.',  # Flatten: put all files next to exe (fixes DLL search on Windows)
+    uac_admin=True,          # Request UAC elevation so app can write config to Program Files
     # icon='installer/opensmu.ico',  # Uncomment when icon is available
 )
 
