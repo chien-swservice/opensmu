@@ -25,6 +25,7 @@ DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 OutputDir=.\dist
 OutputBaseFilename=opensmu_setup_v{#AppVersion}
+SetupIconFile=..\resources\opensmulogo.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern

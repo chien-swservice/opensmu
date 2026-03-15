@@ -21,6 +21,8 @@ a = Analysis(
         (str(project_root / 'config' / 'config.json'), 'config'),
         # Include view components (PyQt5 .ui files if any exist in future)
         (str(project_root / 'view'), 'view'),
+        # Include logo/icon
+        (str(project_root / 'resources'), 'resources'),
     ],
     hiddenimports=[
         # pyvisa backends
@@ -80,7 +82,7 @@ exe = EXE(
     entitlements_file=None,
     contents_directory='.',  # Flatten: put all files next to exe (fixes DLL search on Windows)
     uac_admin=True,          # Request UAC elevation so app can write config to Program Files
-    # icon='installer/opensmu.ico',  # Uncomment when icon is available
+    icon=str(project_root / 'resources' / 'opensmulogo.ico'),
 )
 
 coll = COLLECT(

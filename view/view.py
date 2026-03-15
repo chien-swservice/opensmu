@@ -1,16 +1,21 @@
 # view/main_view.py
-from PyQt5 import QtWidgets as qtw, QtCore as qtc
+from PyQt5 import QtWidgets as qtw, QtCore as qtc, QtGui as qtg
 from PyQt5.QtCore import Qt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
 import os
+from pathlib import Path
+
+_ICON_PATH = Path(__file__).parent.parent / 'resources' / 'opensmulogo.ico'
 
 class View(qtw.QWidget):
     closeSignal = qtc.pyqtSignal()
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Source Measurement Units realtimeIV')
+        self.setWindowTitle('OpenSMU — IV and Real-Time Current Measurement')
+        if _ICON_PATH.exists():
+            self.setWindowIcon(qtg.QIcon(str(_ICON_PATH)))
         self.resize(2400, 1800)
 
         # main layout = left and right layout
