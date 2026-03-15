@@ -12,6 +12,11 @@ from pathlib import Path
 # Project root is one level up from this spec file
 project_root = Path(SPECPATH).parent
 
+# Direct build and dist output into installer/ subfolder
+import PyInstaller.config
+PyInstaller.config.CONF['distpath'] = str(Path(SPECPATH) / 'dist')
+PyInstaller.config.CONF['workpath'] = str(Path(SPECPATH) / 'build')
+
 a = Analysis(
     [str(project_root / 'run.py')],
     pathex=[str(project_root)],
