@@ -7,3 +7,8 @@ __pycache__/
 .pytest_cache/
 *.h5
 *.pt
+
+# PyInstaller / Inno Setup build output
+installer/build/
+installer/dist/
+installer/*.exe
