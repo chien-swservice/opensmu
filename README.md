@@ -4,7 +4,7 @@ If this software helped you with your measurements, consider supporting the proj
 
 # OpenSMU — IV and Real-Time Current Measurement
 
-A desktop application for **IV sweep** and **real-time current measurements** using Source Measurement Units (SMUs) from Keithley and Keysight. Runs on Windows, macOS, and Linux.
+A desktop application for **IV sweep** and **real-time current measurements** using Source Measurement Units (SMUs) from Keithley and Keysight.
 
 ---
 
@@ -21,7 +21,43 @@ A desktop application for **IV sweep** and **real-time current measurements** us
 
 ---
 
-## Getting Started
+## Installation Options
+
+There are two ways to use OpenSMU. Choose the one that fits you best:
+
+| | Option A: Windows Installer | Option B: Run from Source |
+|---|---|---|
+| Requires Python | No | Yes |
+| Platforms | Windows only | Windows, macOS, Linux |
+| Best for | Lab users, non-programmers | Developers, contributors |
+
+---
+
+## Option A — Windows Installer (Recommended for most users)
+
+### Prerequisites
+
+**NI-VISA** must be installed to communicate with real hardware instruments (Keithley, Keysight).
+Download it here: [https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html](https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html)
+
+> Simulation mode works without NI-VISA.
+
+### Install
+
+1. Download `opensmu_setup_v0.1.1.exe` from the [Releases page](https://github.com/chien-swservice/opensmu/releases)
+2. Run the installer — Windows will ask for administrator permission, click **Yes**
+3. Follow the setup wizard (choose Start Menu shortcut, optional desktop shortcut)
+4. Launch **opensmu** from the Start Menu or desktop
+
+### Uninstall
+
+Go to **Windows Settings → Apps → opensmu → Uninstall**.
+
+---
+
+## Option B — Run from Source Code
+
+Use this option if you want to modify the code, contribute, or run on macOS / Linux.
 
 ### Step 1 — Install Python
 
@@ -30,7 +66,7 @@ A desktop application for **IV sweep** and **real-time current measurements** us
 3. Run the installer
    - **Windows**: check the box **"Add Python to PATH"** before clicking Install
 
-To verify, open a terminal (Command Prompt on Windows, Terminal on macOS/Linux) and type:
+To verify:
 ```
 python --version
 ```
@@ -59,13 +95,9 @@ git clone https://github.com/chien-swservice/opensmu.git
 cd opensmu
 ```
 
-This creates a folder called `opensmu` with all the program files.
-
 ---
 
 ### Step 4 — Create a Virtual Environment
-
-A virtual environment keeps the program's dependencies isolated from the rest of your system.
 
 **Windows:**
 ```
@@ -91,7 +123,7 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-This installs all required libraries (PyQt5, pyvisa, matplotlib, numpy, pytest). It may take a minute.
+This installs all required libraries (PyQt5, pyvisa, matplotlib, numpy, pytest).
 
 ---
 
@@ -115,12 +147,39 @@ Your terminal prompt will change to show `(.venv)` — this means the environmen
 
 ### Step 7 — Run the Program
 
-With the virtual environment active, simply run:
+With the virtual environment active:
 ```
 python run.py
 ```
 
 The application window will open. By default it starts in **Simulation mode** — no hardware required.
+
+---
+
+### Using with VS Code
+
+1. Open the `opensmu` folder in VS Code (`File → Open Folder`)
+2. Press `Ctrl+Shift+P` → type `Python: Select Interpreter`
+3. Choose the interpreter inside `.venv` (shown as **Recommended**)
+4. Open `run.py` and press `F5` to launch the application
+
+---
+
+### Running Tests
+
+To verify your installation:
+
+**Windows:**
+```
+.venv\Scripts\python -m pytest test/ -v
+```
+
+**macOS / Linux:**
+```
+.venv/bin/python -m pytest test/ -v
+```
+
+Expected result: **63 passed**.
 
 ---
 
@@ -181,41 +240,14 @@ Click the **Configuration** button to open the settings dialog.
 ### Connecting a Real SMU
 
 1. Connect your SMU to the PC via GPIB, USB, or LAN
-2. Install the VISA driver for your interface:
-   - **Keithley / Tektronix**: [Keithley VISA](https://www.tek.com/en/support/faqs/where-do-i-download-ni-visa-or-keithley-visa)
-   - **Keysight**: [Keysight IO Libraries Suite](https://www.keysight.com/us/en/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html)
-   - **Generic (free)**: [NI-VISA](https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html)
+2. Install NI-VISA: [https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html](https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html)
 3. Open **Configuration**, set **SMU Type** to your device, and enter the **VISA Address**
 4. Click **Start**
 
-> **Tip:** Use NI MAX (Windows) or `python -c "import pyvisa; print(pyvisa.ResourceManager().list_resources())"` to find your instrument's VISA address.
-
----
-
-## Running Tests
-
-To verify your installation is working correctly:
-
-**Windows:**
-```
-.venv\Scripts\python -m pytest test/ -v
-```
-
-**macOS / Linux:**
-```
-.venv/bin/python -m pytest test/ -v
-```
-
-Expected result: **63 passed** (1 skipped if PyQt5 is unavailable in headless mode).
-
----
-
-## Using with VS Code
-
-1. Open the `opensmu` folder in VS Code (`File → Open Folder`)
-2. Press `Ctrl+Shift+P` → type `Python: Select Interpreter`
-3. Choose the interpreter inside `.venv` (shown as **Recommended**)
-4. Open `run.py` and press `F5` to launch the application
+> **Tip:** Use NI MAX (Windows) or run the following to find your instrument's VISA address:
+> ```
+> python -c "import pyvisa; print(pyvisa.ResourceManager().list_resources())"
+> ```
 
 ---
 
@@ -227,6 +259,29 @@ Measurement data is saved as tab-separated `.txt` files in your configured save 
 - **RT files**: `RT<filename><timestamp>.txt` — columns: `time`, `current`
 
 These can be opened directly in Excel, Origin, or any text editor.
+
+---
+
+## Building the Installer (developers only)
+
+To build the Windows installer from source:
+
+1. Install PyInstaller:
+   ```
+   .venv\Scripts\pip install pyinstaller
+   ```
+
+2. Build the executable:
+   ```
+   .venv\Scripts\pyinstaller installer/opensmu.spec --distpath installer/dist --workpath installer/build
+   ```
+
+3. Build the installer (requires [Inno Setup](https://jrsoftware.org/isdl.php)):
+   ```
+   "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\opensmu_installer.iss
+   ```
+
+Output: `installer/dist/opensmu_setup_v0.1.1.exe`
 
 ---
 
