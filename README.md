@@ -40,6 +40,8 @@ There are two ways to use OpenSMU. Choose the one that fits you best:
 **NI-VISA** must be installed to communicate with real hardware instruments (Keithley, Keysight).
 Download it here: [https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html](https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html)
 
+**NI-488.2** Version 2025 Q3 is more stable for my case
+https://www.ni.com/de/support/downloads/drivers/download.ni-488-2.html?srsltid=AfmBOor3wMK_g43SoM03FsXRd9lVDvghmmWFAOZMYt7VHtufi8faqte3#575749
 > Simulation mode works without NI-VISA.
 
 ### Install
@@ -238,11 +240,6 @@ Click the **Configuration** button to open the settings dialog.
 ---
 
 ### Connecting a Real SMU
-
-1. Connect your SMU to the PC via GPIB, USB, or LAN
-2. Install NI-VISA: [https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html](https://www.ni.com/en/support/downloads/drivers/download.ni-visa.html)
-3. Open **Configuration**, set **SMU Type** to your device, and enter the **VISA Address**
-4. Click **Start**
 
 > **Tip:** Use NI MAX (Windows) or run the following to find your instrument's VISA address:
 > ```
