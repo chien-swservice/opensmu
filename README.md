@@ -186,7 +186,7 @@ Expected result: **63 passed**.
 ---
 
 ## Using the Application
-
+- The window can be resized to fit to your monitor. Next run, it will be remembered!
 ### First Launch
 
 The program opens in **Simulation mode** with default settings. You can:
